@@ -2,8 +2,17 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Échecs 1v1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="description" content="Jeu d'échecs complet : bots, tournois, Chess960, apprentissage">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Échecs">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23f0d9b5'/><text y='.85em' font-size='78' x='50%' text-anchor='middle'>♟</text></svg>">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>Échecs</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -75,7 +84,7 @@
   #adv-label-white { font-size: 0.75rem; color: #aaa; font-weight: bold; }
   #advantage-bar {
     width: 22px;
-    height: 576px;
+    height: calc(var(--sq) * 8);
     border-radius: 11px;
     background: #111;
     overflow: hidden;
@@ -117,14 +126,14 @@
     font-weight: bold;
   }
   .rank-labels { flex-direction: column; gap: 0; }
-  .rank-labels span { height: 72px; display: flex; align-items: center; }
+  .rank-labels span { height: var(--sq); display: flex; align-items: center; }
   .file-labels { flex-direction: row; padding-left: 0; }
-  .file-labels span { width: 72px; display: flex; justify-content: center; }
+  .file-labels span { width: var(--sq); display: flex; justify-content: center; }
 
   #board {
     display: grid;
-    grid-template-columns: repeat(8, 72px);
-    grid-template-rows: repeat(8, 72px);
+    grid-template-columns: repeat(8, var(--sq));
+    grid-template-rows: repeat(8, var(--sq));
     border: 3px solid #555;
     border-radius: 4px;
     overflow: hidden;
@@ -132,18 +141,19 @@
   }
 
   .square {
-    width: 72px;
-    height: 72px;
+    width: var(--sq);
+    height: var(--sq);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48px;
+    font-size: calc(var(--sq) * 0.64);
     cursor: pointer;
     position: relative;
     transition: background 0.15s;
   }
 
   :root {
+    --sq: 72px;
     --sq-light: #f0d9b5;
     --sq-dark:  #b58863;
     --sq-ll:    #cdd16f;
@@ -184,25 +194,41 @@
   .piece { line-height: 1; cursor: grab; transition: transform 0.1s; }
   .piece:active { cursor: grabbing; transform: scale(1.15); }
   .piece.white {
-    color: #ffffff;
-    text-shadow:
-      0 0 3px #000,
-      1px 1px 0 #000,
-      -1px 1px 0 #000,
-      1px -1px 0 #000,
-      -1px -1px 0 #000,
-      2px 2px 4px rgba(0,0,0,0.8);
+    color: var(--piece-white, #ffffff);
+    text-shadow: var(--piece-white-sh,
+      0 0 3px #000, 1px 1px 0 #000, -1px 1px 0 #000,
+      1px -1px 0 #000, -1px -1px 0 #000, 2px 2px 4px rgba(0,0,0,0.8));
   }
   .piece.black {
-    color: #111111;
-    text-shadow:
-      0 0 3px rgba(255,255,255,0.6),
-      1px 1px 0 rgba(255,255,255,0.4),
-      -1px 1px 0 rgba(255,255,255,0.4),
-      1px -1px 0 rgba(255,255,255,0.4),
-      -1px -1px 0 rgba(255,255,255,0.4),
-      2px 2px 4px rgba(0,0,0,0.5);
+    color: var(--piece-black, #111111);
+    text-shadow: var(--piece-black-sh,
+      0 0 3px rgba(255,255,255,0.6), 1px 1px 0 rgba(255,255,255,0.4),
+      -1px 1px 0 rgba(255,255,255,0.4), 1px -1px 0 rgba(255,255,255,0.4),
+      -1px -1px 0 rgba(255,255,255,0.4), 2px 2px 4px rgba(0,0,0,0.5));
   }
+  /* Piece color bar */
+  #piece-color-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .pcb-group { display: flex; align-items: center; gap: 4px; }
+  .pcb-label { font-size: 0.72rem; color: #555; }
+  .piece-swatch {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+  }
+  .piece-swatch:hover { transform: scale(1.2); }
+  .piece-swatch.active { border-color: #f0c040; transform: scale(1.15); }
+  .pcb-sep { width: 1px; height: 18px; background: #2a2a3a; margin: 0 2px; }
 
   #controls {
     display: flex;
@@ -272,8 +298,8 @@
     justify-content: center;
   }
   .promo-btn {
-    width: 72px; height: 72px;
-    font-size: 52px;
+    width: var(--sq); height: var(--sq);
+    font-size: calc(var(--sq) * 0.7);
     background: #f0d9b5;
     border-radius: 8px;
     display: flex;
@@ -383,7 +409,7 @@
   #captured-bar {
     display: flex;
     justify-content: space-between;
-    width: 576px;
+    width: calc(var(--sq) * 8);
     margin-top: 10px;
     font-size: 1.5rem;
     min-height: 36px;
@@ -935,15 +961,15 @@
 
   #learn-board {
     display: grid;
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
+    grid-template-columns: repeat(8, var(--lsq, 52px));
+    grid-template-rows: repeat(8, var(--lsq, 52px));
     border: 2px solid #444; border-radius: 3px; overflow: hidden;
     box-shadow: 0 8px 30px rgba(0,0,0,0.6);
   }
   #learn-board .sq {
-    width: 60px; height: 60px;
+    width: var(--lsq, 52px); height: var(--lsq, 52px);
     display: flex; align-items: center; justify-content: center;
-    font-size: 40px; cursor: pointer; position: relative;
+    font-size: calc(var(--lsq, 52px) * 0.67); cursor: pointer; position: relative;
     transition: background 0.1s;
   }
   #learn-board .sq.light { background: #f0d9b5; }
@@ -1028,7 +1054,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 576px;
+    width: calc(var(--sq) * 8);
     padding: 8px 14px;
     border-radius: 10px;
     margin: 4px 0;
@@ -1699,6 +1725,85 @@
     border: 1px solid rgba(255,255,255,0.15);
   }
   .bilan-tourn-btn.secondary:hover { background: rgba(255,255,255,0.13); }
+
+  /* ================================================
+     RESPONSIVE DESIGN
+     ================================================ */
+  body { padding: 12px 8px; }
+
+  /* ≤620px : tablette / grand téléphone */
+  @media (max-width: 620px) {
+    :root { --sq: clamp(44px, 11.2vw, 64px); --lsq: 42px; }
+    #advantage-bar-wrap { display: none; }
+    h1 { font-size: 1.5rem; letter-spacing: 2px; margin-bottom: 10px; }
+    #game-message { font-size: 1.1rem; }
+    .mode-btn { font-size: 0.78rem; padding: 7px 12px; }
+    .time-btn { font-size: 0.72rem; padding: 5px 9px; }
+    #profile-card { padding: 10px 14px; gap: 10px; }
+    #chat-messages { height: 120px; }
+  }
+
+  /* ≤440px : téléphone standard */
+  @media (max-width: 440px) {
+    :root { --sq: clamp(38px, 11vw, 50px); --lsq: 36px; }
+    h1 { font-size: 1.2rem; letter-spacing: 1px; }
+    #game-message { font-size: 1rem; }
+    #status-bar { font-size: 0.9rem; gap: 8px; }
+    #turn-indicator { padding: 5px 10px; font-size: 0.85rem; }
+    .mode-btn { font-size: 0.72rem; padding: 6px 9px; }
+    button { padding: 8px 16px; font-size: 0.9rem; }
+    #captured-bar { font-size: 1.1rem; }
+    .bilan-card .val { font-size: 1.2rem; }
+    #bilan-title { font-size: 1.3rem; }
+    #bilan-trophy { font-size: 2.8rem; }
+    .clock-time { font-size: 1.4rem; }
+    #chat-panel { font-size: 0.75rem; }
+    #profile-card { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ≤360px : petit téléphone */
+  @media (max-width: 360px) {
+    :root { --sq: clamp(36px, 10.5vw, 44px); }
+    .rank-labels, .file-labels { display: none; }
+    h1 { font-size: 1.1rem; }
+    .mode-btn { font-size: 0.68rem; padding: 5px 7px; }
+  }
+
+  /* Apprendre modal — stack sur mobile */
+  @media (max-width: 680px) {
+    #learn-inner { flex-direction: column; }
+    #learn-sidebar { width: 100%; max-height: 180px; overflow-y: auto; border-right: none; border-bottom: 1px solid #333; flex-direction: row; flex-wrap: wrap; }
+    #learn-board-wrap { justify-content: center; }
+    #learn-info { max-width: 100%; }
+    #learn-modal .learn-modal-inner { overflow-y: auto; }
+  }
+
+  /* Touches tactiles minimum 44px */
+  @media (hover: none) and (pointer: coarse) {
+    .square { min-width: 38px; min-height: 38px; }
+    button { min-height: 44px; }
+    .mode-btn { min-height: 38px; }
+    .bot-card { padding: 10px 8px; }
+    .tourn-round-card { padding: 11px 12px; }
+    #chat-input { font-size: 16px; } /* évite le zoom iOS sur focus */
+  }
+
+  /* Écran tall (mobile portrait) — plus d'espace vertical */
+  @media (max-height: 700px) and (max-width: 500px) {
+    h1 { display: none; }
+    body { padding: 4px; }
+    #game-message { min-height: 1.4rem; font-size: 0.95rem; margin-bottom: 4px; }
+  }
+
+  /* Safe area pour iPhone avec encoche */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    body {
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      padding-left: max(8px, env(safe-area-inset-left));
+      padding-right: max(8px, env(safe-area-inset-right));
+    }
+  }
 </style>
 </head>
 <body>
@@ -1931,6 +2036,13 @@
 </div>
 <div id="theme-bar">
   <label>🎨</label>
+</div>
+<div id="piece-color-bar">
+  <span class="pcb-label">♙</span>
+  <div class="pcb-group" id="pcb-white"></div>
+  <div class="pcb-sep"></div>
+  <span class="pcb-label">♟</span>
+  <div class="pcb-group" id="pcb-black"></div>
 </div>
 
 <!-- Bot Chat -->
@@ -5164,14 +5276,107 @@ document.getElementById('chat-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleChatInput();
 });
 
+// === PIECE COLORS ===
+const PIECE_PALETTES = {
+  white: [
+    { color:'#ffffff', label:'Blanc' },
+    { color:'#f5e6a0', label:'Crème' },
+    { color:'#ffcce0', label:'Rose' },
+    { color:'#b8e4ff', label:'Bleu ciel' },
+    { color:'#b8ffcc', label:'Menthe' },
+    { color:'#f0c040', label:'Doré' },
+    { color:'#e8d5f5', label:'Lavande' },
+    { color:'#ffd0a0', label:'Pêche' },
+  ],
+  black: [
+    { color:'#111111', label:'Noir' },
+    { color:'#aa1a00', label:'Rouge' },
+    { color:'#0a2088', label:'Marine' },
+    { color:'#005a20', label:'Forêt' },
+    { color:'#4b0082', label:'Indigo' },
+    { color:'#7a3010', label:'Brun' },
+    { color:'#1a5050', label:'Ardoise' },
+    { color:'#a06800', label:'Ambre' },
+  ],
+};
+
+let pieceColors = JSON.parse(localStorage.getItem('pieceColors') || '{"white":"#ffffff","black":"#111111"}');
+
+function hexBrightness(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return r*0.299 + g*0.587 + b*0.114;
+}
+
+function buildShadow(shadowCol, alpha1, alpha2) {
+  return `0 0 3px ${shadowCol}, 1px 1px 0 ${shadowCol}, -1px 1px 0 ${shadowCol}, 1px -1px 0 ${shadowCol}, -1px -1px 0 ${shadowCol}, 2px 2px 4px rgba(0,0,0,${alpha2})`;
+}
+
+function applyPieceColors(white, black) {
+  pieceColors = { white, black };
+  localStorage.setItem('pieceColors', JSON.stringify(pieceColors));
+  const root = document.documentElement.style;
+
+  root.setProperty('--piece-white', white);
+  const wBright = hexBrightness(white);
+  const wSh = wBright > 100 ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.8)';
+  root.setProperty('--piece-white-sh', buildShadow(wSh, 0.9, 0.8));
+
+  root.setProperty('--piece-black', black);
+  const bBright = hexBrightness(black);
+  const bSh = bBright > 80 ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.7)';
+  root.setProperty('--piece-black-sh', buildShadow(bSh, 0.7, 0.5));
+
+  document.querySelectorAll('.piece-swatch[data-side="white"]').forEach(s =>
+    s.classList.toggle('active', s.dataset.color === white));
+  document.querySelectorAll('.piece-swatch[data-side="black"]').forEach(s =>
+    s.classList.toggle('active', s.dataset.color === black));
+}
+
+function buildPieceColorBar() {
+  ['white','black'].forEach(side => {
+    const group = document.getElementById(`pcb-${side}`);
+    group.innerHTML = '';
+    PIECE_PALETTES[side].forEach(({ color, label }) => {
+      const sw = document.createElement('div');
+      sw.className = 'piece-swatch' + (pieceColors[side] === color ? ' active' : '');
+      sw.dataset.color = color;
+      sw.dataset.side  = side;
+      sw.title = label;
+      sw.style.background = color;
+      // show piece symbol in the swatch
+      sw.textContent = side === 'white' ? '♙' : '♟';
+      sw.style.color = hexBrightness(color) > 100 ? '#00000055' : '#ffffff44';
+      sw.style.fontSize = '0.8rem';
+      sw.addEventListener('click', () => {
+        applyPieceColors(
+          side === 'white' ? color : pieceColors.white,
+          side === 'black' ? color : pieceColors.black
+        );
+      });
+      group.appendChild(sw);
+    });
+  });
+}
+
 buildThemeBar();
 applyBoardTheme(boardThemeId);
+buildPieceColorBar();
+applyPieceColors(pieceColors.white, pieceColors.black);
 renderTrophyRow();
 
 checkAndUpdateStreak();
 startGame();
 renderProfileCard();
 if (streakIsNew) setTimeout(() => showStreakToast(streakData.count), 800);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
