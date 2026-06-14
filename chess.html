@@ -223,6 +223,8 @@
   button:active { transform: translateY(0); }
   #btn-restart { background: #f0c040; color: #111; }
   #btn-undo    { background: #444; color: #eee; }
+  #btn-sound   { background: #333; color: #eee; padding: 10px 13px; font-size: 1.1rem; }
+  #btn-sound.muted { opacity: 0.45; }
 
   /* Board theme picker */
   #theme-bar {
@@ -1050,6 +1052,653 @@
   }
   .clock-row.low-time .clock-time { color: #f44336; animation: pulse 0.5s infinite alternate; }
   .clock-row.hidden-clock { display: none; }
+
+  /* === PRIZE SYSTEM === */
+  #prize-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #prize-modal.show { display: flex; }
+  #prize-box {
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    padding: 32px 24px 26px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(240,192,64,0.18);
+  }
+  #prize-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .confetti-piece {
+    position: absolute;
+    border-radius: 2px;
+    top: -16px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(0) rotateZ(0deg); opacity: 1; }
+    80%  { opacity: 0.9; }
+    100% { transform: translateY(440px) rotateZ(680deg); opacity: 0; }
+  }
+  #prize-border {
+    position: absolute; inset: 0;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    pointer-events: none;
+  }
+  #prize-icon {
+    font-size: 4.5rem;
+    display: block;
+    margin-bottom: 10px;
+    animation: prizeIconIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    transform: scale(0);
+  }
+  @keyframes prizeIconIn {
+    to { transform: scale(1); }
+  }
+  #prize-tier-name {
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    animation: prizeTextIn 0.4s 0.3s ease forwards;
+    opacity: 0;
+  }
+  #prize-season {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 10px;
+    animation: prizeTextIn 0.4s 0.45s ease forwards;
+    opacity: 0;
+  }
+  #prize-desc {
+    font-size: 0.85rem;
+    color: #bbb;
+    line-height: 1.55;
+    margin-bottom: 18px;
+    animation: prizeTextIn 0.4s 0.55s ease forwards;
+    opacity: 0;
+  }
+  @keyframes prizeTextIn { to { opacity: 1; } }
+  #prize-rewards {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+    animation: prizeTextIn 0.4s 0.65s ease forwards;
+    opacity: 0;
+  }
+  .prize-reward-card {
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: #ddd;
+    text-align: left;
+  }
+  .prize-reward-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .prize-reward-label { font-size: 0.65rem; color: #888; display: block; }
+  #btn-prize-close {
+    background: linear-gradient(135deg, #f0c040, #e0a820);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 30px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    animation: prizeTextIn 0.4s 0.75s ease forwards;
+    opacity: 0;
+  }
+  #btn-prize-close:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(240,192,64,0.4); }
+  /* Profile title badge */
+  #profile-title {
+    display: none;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-bottom: 2px;
+  }
+  /* Trophy chip row */
+  #trophy-row { display: none; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+  .trophy-chip { font-size: 0.85rem; cursor: default; }
+  /* Locked theme swatch */
+  .theme-swatch.locked { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.5); }
+  .theme-swatch.locked:hover { transform: none; }
+  /* Locked emoji */
+  .av-emoji-btn.locked { opacity: 0.3; cursor: not-allowed; position: relative; }
+  .av-emoji-btn.locked::after { content:'🔒'; position:absolute; bottom:-1px; right:-1px; font-size:0.55rem; }
+  /* Hint toast */
+  #hint-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #2a2a3a;
+    border: 1px solid #444;
+    color: #ccc;
+    font-size: 0.78rem;
+    padding: 8px 18px;
+    border-radius: 10px;
+    z-index: 950;
+    transition: transform 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #hint-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* === GAME HISTORY === */
+  #history-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    z-index: 900;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #history-modal.show { display: flex; }
+  #history-box {
+    background: #1a1a2a;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 460px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  #history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 10px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #22223a;
+  }
+  #history-header h2 { font-size: 1rem; color: #eee; margin: 0; }
+  #btn-history-close {
+    background: rgba(255,255,255,0.07);
+    border: none; border-radius: 8px;
+    color: #aaa; font-size: 1rem;
+    width: 32px; height: 32px;
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+  }
+  #btn-history-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  #history-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px 6px;
+    flex-shrink: 0;
+  }
+  .hist-tab {
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    color: #888;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .hist-tab.active { border-color: #f0c040; color: #f0c040; background: rgba(240,192,64,0.1); }
+  .hist-tab:hover:not(.active) { border-color: #555; color: #ccc; }
+  #history-count {
+    padding: 0 16px 6px;
+    font-size: 0.72rem;
+    color: #555;
+    flex-shrink: 0;
+  }
+  #history-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 6px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .hist-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    padding: 9px 11px;
+    border-left: 3px solid transparent;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    position: relative;
+  }
+  .hist-entry.h-win  { border-left-color: #4caf50; }
+  .hist-entry.h-loss { border-left-color: #f44336; }
+  .hist-entry.h-draw { border-left-color: #888; }
+  .hist-result-icon { font-size: 1.1rem; flex-shrink: 0; width: 22px; text-align: center; }
+  .hist-opp-av {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .hist-main { flex: 1; min-width: 0; }
+  .hist-opp-name { font-size: 0.82rem; font-weight: 700; color: #ddd; }
+  .hist-meta { font-size: 0.68rem; color: #666; margin-top: 2px; }
+  .hist-right { flex-shrink: 0; text-align: right; }
+  .hist-elo-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .hist-elo-badge.pos { background: rgba(76,175,80,0.18); color: #4caf50; }
+  .hist-elo-badge.neg { background: rgba(244,67,54,0.18); color: #f44336; }
+  .hist-elo-badge.zero { background: rgba(158,158,158,0.12); color: #888; }
+  .hist-date { font-size: 0.67rem; color: #555; margin-top: 3px; }
+  .hist-badges { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+  .hist-badge {
+    font-size: 0.58rem; font-weight: 700;
+    padding: 1px 5px; border-radius: 4px;
+    background: rgba(255,255,255,0.08); color: #888;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .hist-badge.b960 { background: rgba(124,77,255,0.2); color: #b39ddb; }
+  .hist-badge.btout { background: rgba(255,152,0,0.2); color: #ffb74d; }
+  .hist-badge.btourn { background: rgba(240,192,64,0.2); color: #f0c040; }
+  #history-empty {
+    text-align: center;
+    color: #555;
+    font-size: 0.85rem;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+  /* Profile history link */
+  #btn-history-link {
+    font-size: 0.7rem;
+    color: #666;
+    cursor: pointer;
+    padding: 1px 5px;
+    border-radius: 4px;
+    transition: color 0.15s;
+    margin-left: 4px;
+  }
+  #btn-history-link:hover { color: #aaa; background: rgba(255,255,255,0.07); }
+
+  /* === BOT CHAT === */
+  #chat-panel {
+    display: none;
+    background: #16161e;
+    border: 1px solid #2a2a3a;
+    border-radius: 12px;
+    margin: 6px 0;
+    overflow: hidden;
+  }
+  #chat-panel.show { display: block; }
+  #chat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid #1e1e2a;
+  }
+  #chat-bot-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+  #chat-bot-label { font-size: 0.78rem; font-weight: 700; color: #ccc; flex: 1; }
+  #chat-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #4caf50;
+    flex-shrink: 0;
+    box-shadow: 0 0 5px #4caf50;
+  }
+  #chat-chevron { font-size: 0.65rem; color: #555; transition: transform 0.2s; }
+  #chat-panel.collapsed #chat-chevron { transform: rotate(180deg); }
+  #chat-messages {
+    height: 150px;
+    overflow-y: auto;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    scroll-behavior: smooth;
+  }
+  #chat-panel.collapsed #chat-messages,
+  #chat-panel.collapsed #chat-input-row { display: none; }
+  .chat-msg { display: flex; gap: 6px; align-items: flex-end; opacity: 0; animation: chatFadeIn 0.3s forwards; }
+  .chat-msg.player { flex-direction: row-reverse; }
+  @keyframes chatFadeIn { to { opacity: 1; } }
+  .chat-bubble {
+    max-width: 78%;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .chat-msg.bot .chat-bubble {
+    background: #24243a;
+    color: #ddd;
+    border-bottom-left-radius: 3px;
+  }
+  .chat-msg.player .chat-bubble {
+    background: #1a3355;
+    color: #bbd;
+    border-bottom-right-radius: 3px;
+  }
+  .chat-mini-avatar {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .chat-typing-indicator { display: flex; gap: 3px; align-items: center; padding: 5px 10px; }
+  .chat-typing-indicator span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #555;
+    animation: typingBounce 1s infinite;
+  }
+  .chat-typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+  .chat-typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
+  #chat-input-row {
+    display: flex;
+    gap: 6px;
+    padding: 6px 8px;
+    border-top: 1px solid #1e1e2a;
+  }
+  #chat-input {
+    flex: 1;
+    background: #0e0e18;
+    border: 1px solid #2a2a3a;
+    border-radius: 8px;
+    color: #ddd;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    outline: none;
+    font-family: inherit;
+  }
+  #chat-input:focus { border-color: #44445a; }
+  #chat-send {
+    background: #2a2a4a;
+    border: none;
+    border-radius: 8px;
+    color: #9090cc;
+    font-size: 0.9rem;
+    padding: 6px 11px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #chat-send:hover { background: #3a3a5a; color: #bbbbff; }
+
+  /* === TOURNAMENT MODAL === */
+  #tournament-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    z-index: 900;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #tournament-modal.show { display: flex; }
+  #tournament-box {
+    background: #1e1e2e;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    padding: 0 0 20px;
+  }
+  #tournament-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 0;
+    gap: 8px;
+  }
+  #tournament-tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .t-tab {
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    color: #aaa;
+    font-size: 0.82rem;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .t-tab.active {
+    border-color: #f0c040;
+    color: #f0c040;
+    background: rgba(240,192,64,0.12);
+  }
+  .t-tab:hover:not(.active) { border-color: #666; color: #ccc; }
+  #btn-tournament-close {
+    background: rgba(255,255,255,0.07);
+    border: none;
+    border-radius: 8px;
+    color: #aaa;
+    font-size: 1rem;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #btn-tournament-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  #t-season-info {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #888;
+    padding: 10px 18px 4px;
+    letter-spacing: 0.5px;
+  }
+  #t-rounds-list {
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .tourn-round-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 9px 12px;
+    transition: all 0.2s;
+  }
+  .tourn-round-card.current {
+    border-color: #f0c040;
+    background: rgba(240,192,64,0.10);
+    box-shadow: 0 0 12px rgba(240,192,64,0.18);
+  }
+  .tourn-round-card.locked { opacity: 0.4; }
+  .tourn-round-card.won { border-color: rgba(76,175,80,0.5); background: rgba(76,175,80,0.07); }
+  .tourn-round-card.lost { border-color: rgba(244,67,54,0.4); background: rgba(244,67,54,0.05); }
+  .tourn-round-card.draw-result { border-color: rgba(158,158,158,0.4); background: rgba(158,158,158,0.06); }
+  .tr-num {
+    font-size: 0.65rem;
+    color: #666;
+    min-width: 20px;
+    text-align: center;
+    font-weight: 700;
+  }
+  .tr-emoji { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+  .tr-info { flex: 1; min-width: 0; }
+  .tr-name { font-size: 0.82rem; font-weight: 700; color: #ddd; display: block; }
+  .tr-elo-diff { font-size: 0.68rem; color: #888; }
+  .tr-status { font-size: 0.72rem; text-align: right; flex-shrink: 0; }
+  .tr-result-badge { font-size: 0.85rem; display: block; }
+  .tr-elo-chg { display: block; font-weight: 700; font-size: 0.72rem; }
+  .tr-elo-chg.pos { color: #4caf50; }
+  .tr-elo-chg.neg { color: #f44336; }
+  .tr-elo-chg.neut { color: #888; }
+  #t-progress {
+    padding: 14px 18px 6px;
+    text-align: center;
+  }
+  #t-score {
+    font-size: 0.82rem;
+    color: #aaa;
+    margin-bottom: 10px;
+  }
+  .tourn-btn {
+    background: linear-gradient(135deg, #f0c040, #e0a820);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .tourn-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(240,192,64,0.35); }
+  .tourn-complete {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f0c040;
+    margin-bottom: 12px;
+  }
+  #t-no-tournament {
+    text-align: center;
+    padding: 30px 24px;
+    color: #888;
+    font-size: 0.88rem;
+  }
+  #t-no-tournament p { margin-bottom: 16px; line-height: 1.5; }
+
+  /* === RANKING VIEW === */
+  #t-ranking-view { padding: 10px 14px; }
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border: 1.5px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.04);
+  }
+  .rank-row.rank-you {
+    border-color: #f0c040;
+    background: rgba(240,192,64,0.10);
+  }
+  .rank-pos { font-size: 0.85rem; min-width: 24px; text-align: center; font-weight: 700; color: #aaa; }
+  .rank-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .rank-name { flex: 1; font-size: 0.82rem; font-weight: 600; color: #ddd; }
+  .rank-you-badge {
+    display: inline-block;
+    background: #f0c040;
+    color: #1a1a1a;
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .rank-elo { font-size: 0.82rem; font-weight: 700; color: #f0c040; min-width: 36px; text-align: right; }
+  .rank-record { font-size: 0.7rem; color: #888; min-width: 70px; text-align: right; }
+
+  /* === TOURNAMENT BANNER (in-game) === */
+  #tournament-banner {
+    display: none;
+    text-align: center;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, rgba(240,192,64,0.15), rgba(240,192,64,0.08));
+    border-bottom: 1.5px solid rgba(240,192,64,0.3);
+    font-size: 0.8rem;
+    color: #f0c040;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+  }
+  #tournament-banner.show { display: block; }
+
+  /* === BILAN TOURNAMENT ACTIONS === */
+  #bilan-tourn-actions { display: none; flex-direction: column; gap: 8px; padding-top: 6px; }
+  #bilan-tourn-actions.show { display: flex; }
+  #bilan-tourn-info {
+    font-size: 0.8rem;
+    color: #aaa;
+    text-align: center;
+    padding: 4px 0 8px;
+  }
+  .bilan-tourn-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .bilan-tourn-btn.primary {
+    background: linear-gradient(135deg, #f0c040, #e0a820);
+    color: #1a1a1a;
+  }
+  .bilan-tourn-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(240,192,64,0.3); }
+  .bilan-tourn-btn.secondary {
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .bilan-tourn-btn.secondary:hover { background: rgba(255,255,255,0.13); }
 </style>
 </head>
 <body>
@@ -1060,9 +1709,12 @@
   <div id="avatar-circle">🙂</div>
   <div id="profile-info">
     <div id="profile-name">Joueur</div>
+    <div id="profile-title"></div>
+    <div id="trophy-row"></div>
     <div id="profile-elo-row">
       <span id="profile-elo">⚡ ELO 800</span>
       <span id="profile-edit">✏️ modifier</span>
+      <span id="btn-history-link">📜 parties</span>
     </div>
     <div id="profile-stats-mini">
       <span class="psm-w">✔ <span id="stat-win">0%</span></span>
@@ -1079,6 +1731,39 @@
   </div>
 </div>
 <div id="streak-toast"></div>
+<div id="hint-toast"></div>
+
+<!-- Prize Modal -->
+<div id="prize-modal">
+  <div id="prize-box">
+    <div id="prize-border"></div>
+    <div id="prize-confetti"></div>
+    <span id="prize-icon">🏆</span>
+    <div id="prize-tier-name"></div>
+    <div id="prize-season"></div>
+    <div id="prize-desc"></div>
+    <div id="prize-rewards"></div>
+    <button id="btn-prize-close">🏆 Voir le classement</button>
+  </div>
+</div>
+
+<!-- Game History Modal -->
+<div id="history-modal">
+  <div id="history-box">
+    <div id="history-header">
+      <h2>📜 Historique des parties</h2>
+      <button id="btn-history-close">✕</button>
+    </div>
+    <div id="history-tabs">
+      <button class="hist-tab active" data-filter="all">Tout</button>
+      <button class="hist-tab" data-filter="cpu">vs Bot</button>
+      <button class="hist-tab" data-filter="tournament">Tournoi</button>
+      <button class="hist-tab" data-filter="1v1">1v1</button>
+    </div>
+    <div id="history-count"></div>
+    <div id="history-list"></div>
+  </div>
+</div>
 
 <!-- Hidden inputs for renderEloBadge compat -->
 <span id="elo-display" style="display:none">800</span>
@@ -1177,6 +1862,7 @@
   <button class="mode-btn" id="btn-mode-cpu">🤖 vs Bot</button>
   <button class="mode-btn" id="btn-mode-async">✉️ Différé</button>
   <button class="mode-btn" id="btn-mode-learn">📚 Apprendre</button>
+  <button class="mode-btn" id="btn-mode-tournament">🏆 Tournoi</button>
   <span id="color-pick" style="display:none; gap:8px; align-items:center;">
     Jouer :
     <button class="mode-btn active" id="btn-color-white">♙ Blancs</button>
@@ -1195,6 +1881,8 @@
 
 <!-- Async banner (active game indicator) -->
 <div id="async-banner">✉️ Partie en différé — <span id="async-banner-text"></span> · Cliquer pour gérer</div>
+<!-- Tournament in-game banner -->
+<div id="tournament-banner" title="Voir le tournoi">⚔️ Tournoi · Manche <span id="tb-round"></span>/7 · vs <span id="tb-bot"></span></div>
 
 <div id="game-message"></div>
 
@@ -1239,15 +1927,55 @@
 <div id="controls">
   <button id="btn-undo">↩ Annuler</button>
   <button id="btn-restart">↺ Nouvelle partie</button>
+  <button id="btn-sound" title="Activer / couper le son">🔊</button>
 </div>
 <div id="theme-bar">
   <label>🎨</label>
+</div>
+
+<!-- Bot Chat -->
+<div id="chat-panel">
+  <div id="chat-header">
+    <div id="chat-bot-icon"></div>
+    <span id="chat-bot-label">Chat</span>
+    <div id="chat-status-dot"></div>
+    <span id="chat-chevron">▲</span>
+  </div>
+  <div id="chat-messages"></div>
+  <div id="chat-input-row">
+    <input id="chat-input" placeholder="Dis quelque chose…" maxlength="120" autocomplete="off" />
+    <button id="chat-send">➤</button>
+  </div>
 </div>
 
 <div id="promo-modal">
   <div id="promo-box">
     <p>Choisissez la promotion</p>
     <div id="promo-pieces"></div>
+  </div>
+</div>
+
+<!-- Tournament & Ranking Modal -->
+<div id="tournament-modal">
+  <div id="tournament-box">
+    <div id="tournament-header">
+      <div id="tournament-tabs">
+        <button class="t-tab active" data-tab="bracket">🏆 Tournoi</button>
+        <button class="t-tab" data-tab="ranking">📊 Classement</button>
+      </div>
+      <button id="btn-tournament-close">✕</button>
+    </div>
+    <div id="t-bracket-view">
+      <div id="t-season-info"></div>
+      <div id="t-rounds-list"></div>
+      <div id="t-progress">
+        <div id="t-score"></div>
+        <div id="t-action"></div>
+      </div>
+    </div>
+    <div id="t-ranking-view" style="display:none">
+      <div id="t-ranking-table"></div>
+    </div>
   </div>
 </div>
 
@@ -1289,6 +2017,13 @@
       <h3>Avantage matériel final</h3>
       <div class="bilan-adv-bar"><div class="bilan-adv-bar-inner" id="b-adv-bar"></div></div>
       <div class="bilan-adv-labels"><span>Noirs</span><span>Blancs</span></div>
+    </div>
+    <div id="bilan-tourn-actions">
+      <div id="bilan-tourn-info"></div>
+      <button class="bilan-tourn-btn primary" id="bilan-btn-next-round">➡ Prochain adversaire</button>
+      <button class="bilan-tourn-btn primary" id="bilan-btn-finish-tourn">🏆 Voir résultats</button>
+      <button class="bilan-tourn-btn secondary" id="bilan-btn-retry">🔄 Rejouer cette manche</button>
+      <button class="bilan-tourn-btn secondary" id="bilan-btn-quit-tourn">✕ Quitter le tournoi</button>
     </div>
     <button id="bilan-btn-restart">↺ Nouvelle partie</button>
   </div>
@@ -2029,6 +2764,12 @@ function updatePreview() {
   p.style.background = avDraft.color;
 }
 
+const LOCKED_EMOJIS = [
+  { emoji:'⭐', key:'star',  unlock:'Expert en tournoi (3+ victoires)' },
+  { emoji:'🌟', key:'star2', unlock:'Maître en tournoi (5+ victoires)' },
+  { emoji:'🏅', key:'medal', unlock:'Grand Maître (7/7 victoires !)' },
+];
+
 function buildEmojiGrid() {
   const grid = document.getElementById('av-emoji-grid');
   grid.innerHTML = '';
@@ -2042,6 +2783,23 @@ function buildEmojiGrid() {
       btn.classList.add('selected');
       updatePreview();
     });
+    grid.appendChild(btn);
+  });
+  // Locked tournament emojis
+  LOCKED_EMOJIS.forEach(le => {
+    const isUnlocked = trophyData.unlockedEmojis.includes(le.emoji);
+    const btn = document.createElement('div');
+    btn.className = 'av-emoji-btn' + (isUnlocked && le.emoji === avDraft.emoji ? ' selected' : '') + (isUnlocked ? '' : ' locked');
+    btn.textContent = le.emoji;
+    btn.title = isUnlocked ? le.emoji : `🔒 ${le.unlock}`;
+    if (isUnlocked) {
+      btn.addEventListener('click', () => {
+        avDraft.emoji = le.emoji;
+        grid.querySelectorAll('.av-emoji-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        updatePreview();
+      });
+    }
     grid.appendChild(btn);
   });
 }
@@ -2296,9 +3054,16 @@ function startGame() {
   clockBlack = timeControl;
   clockRunning = false;
   document.getElementById('bilan-modal').classList.remove('show');
+  updateTournamentBanner();
+  updateChatHeader();
+  clearChat();
   setThinking(false);
   render();
   renderClocks();
+  playSfx('start');
+  if (gameMode === 'cpu') {
+    setTimeout(() => botSay(Math.random() < 0.5 ? 'greeting' : 'start'), 1000);
+  }
   // If cpu plays first (human chose black)
   if (gameMode === 'cpu' && playerColor === 'black') {
     scheduleCpuMove();
@@ -2725,6 +3490,7 @@ function handleClick(r, c) {
 }
 
 function doMove(r, c, nr, nc, promotion) {
+  const moverIsBot = gameMode === 'cpu' && turn !== playerColor;
   // Save state for undo
   history.push({
     board: cloneBoard(board), turn, enPassant, halfmove, fullmove,
@@ -2732,6 +3498,7 @@ function doMove(r, c, nr, nc, promotion) {
     lastMove
   });
 
+  const origPiece = board[r][c]; // save before applying
   const result = applyMove(board, r, c, nr, nc, enPassant, promotion);
   board = result.board;
 
@@ -2740,6 +3507,16 @@ function doMove(r, c, nr, nc, promotion) {
     if (cap.color==='white') capturedWhite.push(cap.kind);
     else capturedBlack.push(cap.kind);
   }
+
+  // --- Play move sound ---
+  const isCastle = !!result.castleRook || result.chess960KingEnd !== undefined;
+  const isPromo  = origPiece?.kind === 'P' && (nr === 0 || nr === 7);
+  const isEP     = origPiece?.kind === 'P' && !result.captured && nc !== c && !board[r][nc];
+  if      (isPromo)        playSfx('promote');
+  else if (isCastle)       playSfx('castle');
+  else if (isEP)           playSfx('enpassant');
+  else if (result.captured) playSfx('capture');
+  else                     playSfx('move');
 
   enPassant = result.newEp;
   lastMove = [r, c, nr, result.chess960KingEnd !== undefined ? result.chess960KingEnd : nc];
@@ -2756,6 +3533,26 @@ function doMove(r, c, nr, nc, promotion) {
 
   render();
   renderClocks();
+  // Check sound (after render, gameOver is set if checkmate)
+  if (!gameOver && inCheck(board, turn)) {
+    playSfx('check');
+    if (gameMode === 'cpu' && moverIsBot && turn === playerColor) {
+      setTimeout(() => botSay('check'), 500);
+    }
+  }
+
+  // Chat triggers on captures
+  if (gameMode === 'cpu' && result.captured && !gameOver) {
+    if (moverIsBot && Math.random() < 0.4)
+      setTimeout(() => botSay('capture_by_bot'), 600);
+    else if (!moverIsBot && Math.random() < 0.3)
+      setTimeout(() => botSay('capture_by_player'), 700);
+  }
+
+  // Occasional idle comment from bot after its move (5%)
+  if (gameMode === 'cpu' && moverIsBot && !result.captured && !inCheck(board, turn) && Math.random() < 0.05) {
+    setTimeout(() => botSay('idle'), 900);
+  }
 
   // Schedule CPU reply if needed
   if (gameMode === 'cpu') {
@@ -2808,6 +3605,7 @@ function formatDuration(ms) {
 function showBilan(winner, byTimeout=false) {
   const elapsed = Date.now() - gameStartTime;
   const totalMoves = (fullmove - 1) * 2 + (turn === 'white' ? 0 : 1);
+  const _snapTournRound = tournamentActiveMatch && tournamentData ? tournamentData.currentRound : null;
 
   // Trophy & title
   const cpuColor = playerColor === 'white' ? 'black' : 'white';
@@ -2886,9 +3684,12 @@ function showBilan(winner, byTimeout=false) {
   document.getElementById('b-adv-bar').style.background =
     `linear-gradient(90deg, #111 ${100-pct}%, #f5f5f5 ${100-pct}%)`;
 
-  // ELO + stats update (only vs Jake)
+  // ELO + stats update
   const eloSection   = document.getElementById('bilan-elo-section');
   const statsSection = document.getElementById('bilan-stats-section');
+  const bilanRestart = document.getElementById('bilan-btn-restart');
+  const bilanTournAct = document.getElementById('bilan-tourn-actions');
+
   if (gameMode === 'cpu') {
     const score = winner === playerColor ? 1 : winner === null ? 0.5 : 0;
 
@@ -2898,11 +3699,26 @@ function showBilan(winner, byTimeout=false) {
     playerElo = Math.max(100, playerElo + change);
     saveElo(playerElo);
 
-    // Stats
+    // Global stats (all bots combined)
     const s = loadStats();
     if (score === 1) s.w++; else if (score === 0) s.l++; else s.d++;
     saveStats(s);
+
+    // Per-bot stats
+    updateBotStat(currentBot.id, score);
     renderEloBadge();
+
+    // Save to history
+    saveGameToHistory({
+      ts: Date.now(), mode: tournamentActiveMatch ? 'tournament' : 'cpu',
+      oppId: currentBot.id, oppName: currentBot.name, oppEmoji: currentBot.emoji,
+      oppColor: currentBot.color, oppElo: currentBot.elo,
+      result: score === 1 ? 'win' : score === 0 ? 'loss' : 'draw',
+      playerColor, moves: totalMoves, duration: elapsed,
+      eloChange: change, eloAfter: playerElo,
+      is960, byTimeout,
+      tournRound: _snapTournRound,
+    });
 
     // ELO section
     eloSection.classList.add('show');
@@ -2912,25 +3728,343 @@ function showBilan(winner, byTimeout=false) {
     changeEl.textContent = change > 0 ? `+${change}` : `${change}`;
     document.getElementById('bilan-elo-new').textContent = `Nouvel ELO : ${playerElo}`;
 
-    // Stats section
+    // Stats section (per-bot)
+    const bs = botStatsAll[currentBot.id] || {w:0,d:0,l:0};
     document.getElementById('bilan-stats-title').textContent = `Historique vs ${currentBot.name}`;
     statsSection.classList.add('show');
-    const total = s.w + s.d + s.l;
-    const wp = total ? s.w / total * 100 : 0;
-    const dp = total ? s.d / total * 100 : 0;
-    const lp = total ? s.l / total * 100 : 0;
+    const bTotal = bs.w + bs.d + bs.l;
+    const wp = bTotal ? bs.w / bTotal * 100 : 0;
+    const dp = bTotal ? bs.d / bTotal * 100 : 0;
+    const lp = bTotal ? bs.l / bTotal * 100 : 0;
     document.getElementById('bst-win').style.width  = wp + '%';
     document.getElementById('bst-draw').style.width = dp + '%';
     document.getElementById('bst-loss').style.width = lp + '%';
-    document.getElementById('bsl-win').textContent  = `✔ Victoires ${Math.round(wp)}% (${s.w})`;
-    document.getElementById('bsl-draw').textContent = `= Nulles ${Math.round(dp)}% (${s.d})`;
-    document.getElementById('bsl-loss').textContent = `✘ Défaites ${Math.round(lp)}% (${s.l})`;
+    document.getElementById('bsl-win').textContent  = `✔ Victoires ${Math.round(wp)}% (${bs.w})`;
+    document.getElementById('bsl-draw').textContent = `= Nulles ${Math.round(dp)}% (${bs.d})`;
+    document.getElementById('bsl-loss').textContent = `✘ Défaites ${Math.round(lp)}% (${bs.l})`;
+
+    // Tournament flow
+    if (tournamentActiveMatch) {
+      const result = score === 1 ? 'win' : score === 0.5 ? 'draw' : 'loss';
+      advanceTournament(result, change);
+      tournamentActiveMatch = false;
+      updateTournamentBanner();
+
+      bilanRestart.style.display = 'none';
+      bilanTournAct.classList.add('show');
+
+      const nextRoundBtn = document.getElementById('bilan-btn-next-round');
+      const finishBtn    = document.getElementById('bilan-btn-finish-tourn');
+      const retryBtn     = document.getElementById('bilan-btn-retry');
+      const infoEl       = document.getElementById('bilan-tourn-info');
+
+      if (result !== 'loss') {
+        if (tournamentData.completed) {
+          const wins = tournamentData.rounds.filter(r => r.result === 'win').length;
+          const draws = tournamentData.rounds.filter(r => r.result === 'draw').length;
+          const medal = wins >= 7 ? '🏆' : wins >= 5 ? '🥇' : wins >= 3 ? '🥈' : '🥉';
+          infoEl.textContent = `${medal} Tournoi terminé — ${wins} victoire${wins!==1?'s':''}, ${draws} nulle${draws!==1?'s':''}`;
+          awardTournamentPrize(wins, tournamentData.season);
+          nextRoundBtn.style.display = 'none';
+          finishBtn.style.display    = 'block';
+          retryBtn.style.display     = 'none';
+        } else {
+          const nextBot = getCurrentTournamentBot();
+          infoEl.textContent = `Manche ${tournamentData.currentRound}/7 gagnée ! Prochain : ${nextBot.emoji} ${nextBot.name}`;
+          nextRoundBtn.style.display = 'block';
+          finishBtn.style.display    = 'none';
+          retryBtn.style.display     = 'none';
+        }
+      } else {
+        infoEl.textContent = `Défaite — tu peux rejouer contre ${currentBot.emoji} ${currentBot.name} !`;
+        nextRoundBtn.style.display = 'none';
+        finishBtn.style.display    = 'none';
+        retryBtn.style.display     = 'block';
+      }
+    } else {
+      bilanRestart.style.display = 'block';
+      bilanTournAct.classList.remove('show');
+    }
   } else {
     eloSection.classList.remove('show');
     statsSection.classList.remove('show');
+    bilanRestart.style.display = 'block';
+    bilanTournAct.classList.remove('show');
+    // Save 1v1 game to history
+    if (gameMode === '1v1') {
+      saveGameToHistory({
+        ts: Date.now(), mode: '1v1',
+        oppId: null, oppName: null, oppEmoji: null, oppColor: null, oppElo: null,
+        result: winner || 'draw',
+        playerColor: null, moves: totalMoves, duration: elapsed,
+        eloChange: 0, eloAfter: null,
+        is960, byTimeout, tournRound: null,
+      });
+    }
   }
 
   document.getElementById('bilan-modal').classList.add('show');
+
+  // End-of-game sound + chat message
+  setTimeout(() => {
+    if (!winner) {
+      playSfx('draw');
+      if (gameMode === 'cpu') setTimeout(() => botSay('draw'), 500);
+    } else if (gameMode === 'cpu' && winner === playerColor) {
+      playSfx('win');
+      setTimeout(() => botSay('win_player'), 500);
+    } else {
+      playSfx('checkmate');
+      if (gameMode === 'cpu') setTimeout(() => botSay('win_bot'), 500);
+    }
+  }, 200);
+}
+
+// --- TOURNAMENT SYSTEM ---
+const TOURNAMENT_ORDER = ['jake','lisa','max','sara','alex','viktor','magnus'];
+let tournamentData = JSON.parse(localStorage.getItem('tournamentData') || 'null');
+let tournamentActiveMatch = false;
+let botStatsAll = JSON.parse(localStorage.getItem('botStatsAll') || '{}');
+
+function saveTournamentData() {
+  localStorage.setItem('tournamentData', JSON.stringify(tournamentData));
+}
+
+function saveBotStats() {
+  localStorage.setItem('botStatsAll', JSON.stringify(botStatsAll));
+}
+
+function updateBotStat(botId, scoreVal) {
+  if (!botStatsAll[botId]) botStatsAll[botId] = {w:0,d:0,l:0};
+  if (scoreVal === 1)   botStatsAll[botId].w++;
+  else if (scoreVal === 0.5) botStatsAll[botId].d++;
+  else                  botStatsAll[botId].l++;
+  saveBotStats();
+}
+
+function initTournamentData() {
+  const season = (tournamentData && tournamentData.season) ? tournamentData.season + 1 : 1;
+  return {
+    season,
+    rounds: TOURNAMENT_ORDER.map(id => ({ botId: id, result: null, eloChange: 0 })),
+    currentRound: 0,
+    active: true,
+    completed: false,
+  };
+}
+
+function getCurrentTournamentBot() {
+  if (!tournamentData || !tournamentData.active || tournamentData.completed) return null;
+  const round = tournamentData.rounds[tournamentData.currentRound];
+  return BOTS.find(b => b.id === round.botId) || null;
+}
+
+function advanceTournament(result, eloChange) {
+  if (!tournamentData) return;
+  const round = tournamentData.rounds[tournamentData.currentRound];
+  round.result = result;
+  round.eloChange = eloChange;
+  if (result !== 'loss') {
+    tournamentData.currentRound++;
+    if (tournamentData.currentRound >= TOURNAMENT_ORDER.length) {
+      tournamentData.completed = true;
+      tournamentData.active = false;
+    }
+  }
+  saveTournamentData();
+}
+
+function startTournamentMatch() {
+  const bot = getCurrentTournamentBot();
+  if (!bot) return;
+  currentBot = bot;
+  tournamentActiveMatch = true;
+  gameMode = 'cpu';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-mode-tournament').classList.add('active');
+  document.getElementById('tournament-modal').classList.remove('show');
+  document.getElementById('color-pick').style.display = 'flex';
+  updateTournamentBanner();
+  buildBotPicker();
+  startGame();
+}
+
+function updateTournamentBanner() {
+  const banner = document.getElementById('tournament-banner');
+  if (tournamentActiveMatch && tournamentData && !tournamentData.completed) {
+    const round = tournamentData.rounds[tournamentData.currentRound];
+    const bot = BOTS.find(b => b.id === round.botId);
+    document.getElementById('tb-round').textContent = tournamentData.currentRound + 1;
+    document.getElementById('tb-bot').textContent = `${bot.emoji} ${bot.name}`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function renderTournamentModal() {
+  const seasonInfo = document.getElementById('t-season-info');
+  if (tournamentData) {
+    const done = tournamentData.rounds.filter(r => r.result !== null).length;
+    seasonInfo.textContent = `Saison ${tournamentData.season} · ${done}/7 manches`;
+  } else {
+    seasonInfo.textContent = 'Aucune saison en cours';
+  }
+
+  const list = document.getElementById('t-rounds-list');
+  list.innerHTML = '';
+  TOURNAMENT_ORDER.forEach((botId, idx) => {
+    const bot = BOTS.find(b => b.id === botId);
+    const round = tournamentData ? tournamentData.rounds[idx] : null;
+    const isCurrent = tournamentData && !tournamentData.completed && tournamentData.currentRound === idx;
+    const isLocked  = !tournamentData || idx > tournamentData.currentRound || tournamentData.completed && !round.result;
+    const card = document.createElement('div');
+    card.className = 'tourn-round-card';
+    if (isCurrent) card.classList.add('current');
+    else if (!round || round.result === null) card.classList.add('locked');
+    if (round?.result === 'win')  card.classList.add('won');
+    if (round?.result === 'loss') card.classList.add('lost');
+    if (round?.result === 'draw') card.classList.add('draw-result');
+
+    let statusHtml = '';
+    if (round?.result === 'win') {
+      const chg = round.eloChange > 0 ? `+${round.eloChange}` : `${round.eloChange}`;
+      statusHtml = `<span class="tr-result-badge">✅</span><span class="tr-elo-chg pos">${chg} ELO</span>`;
+    } else if (round?.result === 'draw') {
+      const chg = round.eloChange > 0 ? `+${round.eloChange}` : `${round.eloChange}`;
+      statusHtml = `<span class="tr-result-badge">➖</span><span class="tr-elo-chg neut">${chg} ELO</span>`;
+    } else if (round?.result === 'loss') {
+      const chg = round.eloChange > 0 ? `+${round.eloChange}` : `${round.eloChange}`;
+      statusHtml = `<span class="tr-result-badge">❌</span><span class="tr-elo-chg neg">${chg} ELO</span>`;
+    } else if (isCurrent) {
+      statusHtml = `<span class="tr-result-badge">⚔️</span><span class="tr-elo-chg neut">EN JEU</span>`;
+    } else {
+      statusHtml = `<span class="tr-result-badge">🔒</span>`;
+    }
+
+    card.innerHTML = `
+      <span class="tr-num">${idx+1}</span>
+      <span class="tr-emoji">${bot.emoji}</span>
+      <span class="tr-info">
+        <span class="tr-name">${bot.name}</span>
+        <span class="tr-elo-diff">${bot.elo} ELO · ${bot.diff}</span>
+      </span>
+      <span class="tr-status">${statusHtml}</span>`;
+    list.appendChild(card);
+  });
+
+  // Progress & action button
+  const wins  = tournamentData ? tournamentData.rounds.filter(r => r.result === 'win').length  : 0;
+  const draws = tournamentData ? tournamentData.rounds.filter(r => r.result === 'draw').length : 0;
+  const scoreEl  = document.getElementById('t-score');
+  const actionEl = document.getElementById('t-action');
+  actionEl.innerHTML = '';
+
+  if (!tournamentData) {
+    scoreEl.textContent = '';
+    const container = document.createElement('div');
+    container.id = 't-no-tournament';
+    container.innerHTML = '<p>Affronte les 7 bots du plus faible au plus fort.<br>Gagne ou fais nulle pour avancer. Ton ELO change à chaque manche.</p>';
+    const btn = document.createElement('button');
+    btn.className = 'tourn-btn';
+    btn.textContent = '🚀 Commencer la Saison 1';
+    btn.onclick = () => {
+      tournamentData = initTournamentData();
+      saveTournamentData();
+      startTournamentMatch();
+    };
+    container.appendChild(btn);
+    actionEl.appendChild(container);
+  } else if (tournamentData.completed) {
+    const total = wins + draws;
+    const medal = wins >= 7 ? '🏆' : wins >= 5 ? '🥇' : wins >= 3 ? '🥈' : '🥉';
+    scoreEl.textContent = `Terminé — ${wins} victoire${wins!==1?'s':''}, ${draws} nulle${draws!==1?'s':''}`;
+    const info = document.createElement('div');
+    info.className = 'tourn-complete';
+    info.textContent = `${medal} Saison ${tournamentData.season} terminée !`;
+    actionEl.appendChild(info);
+    const btn = document.createElement('button');
+    btn.className = 'tourn-btn';
+    btn.textContent = `🔄 Nouvelle saison`;
+    btn.onclick = () => {
+      tournamentData = initTournamentData();
+      saveTournamentData();
+      startTournamentMatch();
+    };
+    actionEl.appendChild(btn);
+  } else if (tournamentActiveMatch) {
+    scoreEl.textContent = `${wins} victoire${wins!==1?'s':''} · Manche ${tournamentData.currentRound+1}/7`;
+    const info = document.createElement('div');
+    info.style.cssText = 'font-size:0.78rem;color:#888;margin-bottom:8px';
+    info.textContent = 'Partie en cours…';
+    actionEl.appendChild(info);
+  } else {
+    scoreEl.textContent = `${wins} victoire${wins!==1?'s':''} · Manche ${tournamentData.currentRound+1}/7`;
+    const bot = getCurrentTournamentBot();
+    const btn = document.createElement('button');
+    btn.className = 'tourn-btn';
+    btn.textContent = `⚔️ Jouer vs ${bot.emoji} ${bot.name}`;
+    btn.onclick = startTournamentMatch;
+    actionEl.appendChild(btn);
+    if (tournamentData.currentRound > 0) {
+      const quitBtn = document.createElement('button');
+      quitBtn.style.cssText = 'background:none;border:none;color:#555;font-size:0.75rem;cursor:pointer;margin-top:8px;display:block;margin-inline:auto';
+      quitBtn.textContent = 'Abandonner le tournoi';
+      quitBtn.onclick = () => {
+        tournamentData = null;
+        localStorage.removeItem('tournamentData');
+        tournamentActiveMatch = false;
+        updateTournamentBanner();
+        renderTournamentModal();
+      };
+      actionEl.appendChild(quitBtn);
+    }
+  }
+}
+
+function renderRanking() {
+  const table = document.getElementById('t-ranking-table');
+  table.innerHTML = '';
+
+  const entries = [
+    ...BOTS.map(bot => ({ isBot: true, bot, elo: bot.elo })),
+    { isBot: false, name: currentAvatar.name || 'Vous', elo: playerElo, emoji: currentAvatar.emoji, color: currentAvatar.color },
+  ];
+  entries.sort((a, b) => b.elo - a.elo);
+
+  entries.forEach((entry, idx) => {
+    const row = document.createElement('div');
+    row.className = 'rank-row' + (!entry.isBot ? ' rank-you' : '');
+    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
+
+    if (!entry.isBot) {
+      row.innerHTML = `
+        <span class="rank-pos">${medal}</span>
+        <span class="rank-avatar" style="background:${entry.color}">${entry.emoji}</span>
+        <span class="rank-name">${entry.name}<span class="rank-you-badge">VOUS</span></span>
+        <span class="rank-elo">${entry.elo}</span>
+        <span class="rank-record" style="color:#f0c040">—</span>`;
+    } else {
+      const bot = entry.bot;
+      const s = botStatsAll[bot.id] || {w:0,d:0,l:0};
+      const total = s.w + s.d + s.l;
+      const record = total ? `${s.w}V ${s.d}N ${s.l}D` : '—';
+      const recordColor = total ? (s.w > s.l ? '#4caf50' : s.l > s.w ? '#f44336' : '#888') : '#555';
+      row.innerHTML = `
+        <span class="rank-pos">${medal}</span>
+        <span class="rank-avatar" style="background:${bot.color}">${bot.emoji}</span>
+        <span class="rank-name">${bot.name}</span>
+        <span class="rank-elo">${bot.elo}</span>
+        <span class="rank-record" style="color:${recordColor}">${record}</span>`;
+    }
+    table.appendChild(row);
+  });
+}
+
+function openTournamentModal() {
+  renderTournamentModal();
+  renderRanking();
+  document.getElementById('tournament-modal').classList.add('show');
 }
 
 // --- BOTS ---
@@ -3177,8 +4311,10 @@ function hideBotUI() {
 
 document.getElementById('btn-mode-1v1').addEventListener('click', () => {
   gameMode = '1v1';
+  tournamentActiveMatch = false;
+  updateTournamentBanner();
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('btn-mode-1v1').classList.add('active');
-  document.getElementById('btn-mode-cpu').classList.remove('active');
   hideBotUI();
   startGame();
 });
@@ -3206,8 +4342,10 @@ function buildBotPicker() {
 
 document.getElementById('btn-mode-cpu').addEventListener('click', () => {
   gameMode = 'cpu';
+  tournamentActiveMatch = false;
+  updateTournamentBanner();
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('btn-mode-cpu').classList.add('active');
-  document.getElementById('btn-mode-1v1').classList.remove('active');
   document.getElementById('bot-pick').classList.add('show');
   document.getElementById('color-pick').style.display = 'flex';
   buildBotPicker();
@@ -3228,8 +4366,62 @@ document.getElementById('btn-color-black').addEventListener('click', () => {
   startGame();
 });
 
-document.getElementById('bilan-btn-restart').addEventListener('click', startGame);
+document.getElementById('bilan-btn-restart').addEventListener('click', () => {
+  if (tournamentActiveMatch) return;
+  startGame();
+});
 document.getElementById('btn-restart').addEventListener('click', startGame);
+
+// Tournament mode button
+document.getElementById('btn-mode-tournament').addEventListener('click', openTournamentModal);
+
+// Tournament modal close
+document.getElementById('btn-tournament-close').addEventListener('click', () => {
+  document.getElementById('tournament-modal').classList.remove('show');
+});
+
+// Tournament tabs
+document.querySelectorAll('.t-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.t-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    document.getElementById('t-bracket-view').style.display  = which === 'bracket' ? '' : 'none';
+    document.getElementById('t-ranking-view').style.display  = which === 'ranking'  ? '' : 'none';
+  });
+});
+
+// Tournament banner click → open modal
+document.getElementById('tournament-banner').addEventListener('click', openTournamentModal);
+
+// Bilan tournament action buttons
+document.getElementById('bilan-btn-next-round').addEventListener('click', () => {
+  document.getElementById('bilan-modal').classList.remove('show');
+  openTournamentModal();
+});
+document.getElementById('bilan-btn-finish-tourn').addEventListener('click', () => {
+  document.getElementById('bilan-modal').classList.remove('show');
+  if (pendingPrize) openPrizeModal(pendingPrize);
+  else openTournamentModal();
+});
+document.getElementById('bilan-btn-retry').addEventListener('click', () => {
+  document.getElementById('bilan-modal').classList.remove('show');
+  // Replay same round: set tournamentActiveMatch back and restart
+  tournamentActiveMatch = true;
+  updateTournamentBanner();
+  startGame();
+});
+document.getElementById('bilan-btn-quit-tourn').addEventListener('click', () => {
+  tournamentData = null;
+  localStorage.removeItem('tournamentData');
+  tournamentActiveMatch = false;
+  updateTournamentBanner();
+  document.getElementById('bilan-modal').classList.remove('show');
+  gameMode = 'cpu';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-mode-cpu').classList.add('active');
+  startGame();
+});
 
 document.getElementById('btn-960').addEventListener('click', () => {
   is960 = !is960;
@@ -3261,6 +4453,142 @@ document.getElementById('btn-undo').addEventListener('click', () => {
   render();
 });
 
+// --- SOUND SYSTEM ---
+let _sfxCtx = null;
+let soundOn = localStorage.getItem('soundOn') !== 'false';
+
+function getSfxCtx() {
+  try {
+    if (!_sfxCtx) _sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_sfxCtx.state === 'suspended') _sfxCtx.resume();
+    return _sfxCtx;
+  } catch(e) { return null; }
+}
+
+function sfxTone(ctx, freq, start, dur, vol=0.25, type='sine', freqEnd=null) {
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.connect(g); g.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, start + dur);
+  g.gain.setValueAtTime(0.001, start);
+  g.gain.linearRampToValueAtTime(vol, start + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  osc.start(start); osc.stop(start + dur + 0.02);
+}
+
+function sfxNoise(ctx, start, dur, vol=0.15, hz=1500) {
+  const len = Math.floor(ctx.sampleRate * (dur + 0.02));
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'bandpass'; filt.frequency.value = hz; filt.Q.value = 2.5;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(vol, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  src.start(start); src.stop(start + dur + 0.02);
+}
+
+const SFX = {
+  // Pièce posée sur l'échiquier — petit "tak" boisé
+  move() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxNoise(ctx, t, 0.055, 0.22, 1800);
+    sfxTone(ctx, 480, t, 0.04, 0.12, 'sine');
+  },
+  // Prise — impact sourd et lourd
+  capture() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxNoise(ctx, t, 0.12, 0.3, 450);
+    sfxTone(ctx, 180, t, 0.08, 0.22, 'sine', 90);
+    sfxNoise(ctx, t + 0.05, 0.06, 0.18, 1200);
+  },
+  // Roque — double clac mécanique avec swoosh
+  castle() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxNoise(ctx, t, 0.04, 0.18, 1600);
+    sfxTone(ctx, 260, t + 0.03, 0.18, 0.13, 'sine', 900);
+    sfxNoise(ctx, t + 0.18, 0.04, 0.18, 1600);
+  },
+  // Promotion — fanfare ascendante majeure
+  promote() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    [261, 329, 392, 523, 659].forEach((f, i) =>
+      sfxTone(ctx, f, t + i * 0.09, 0.18, 0.22, 'sine'));
+  },
+  // Échec — deux bips d'alerte
+  check() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxTone(ctx, 880, t, 0.09, 0.28, 'triangle');
+    sfxTone(ctx, 1108, t + 0.13, 0.11, 0.28, 'triangle');
+  },
+  // Mat — accord dramatique descendant
+  checkmate() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    [523, 466, 392, 330, 262].forEach((f, i) =>
+      sfxTone(ctx, f, t + i * 0.13, 0.22, 0.28, 'triangle'));
+    sfxTone(ctx, 131, t + 0.1, 0.6, 0.2, 'sine');
+  },
+  // Victoire — arpège triomphal
+  win() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    [262, 330, 392, 523, 659, 784].forEach((f, i) =>
+      sfxTone(ctx, f, t + i * 0.08, 0.2, 0.2, 'sine'));
+  },
+  // Nulle/Pat — tonalité ambiguë ondulante
+  draw() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxTone(ctx, 392, t, 0.5, 0.14, 'sine');
+    sfxTone(ctx, 395, t, 0.5, 0.14, 'sine'); // battement lent
+  },
+  // Début de partie — signal prêt
+  start() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxTone(ctx, 440, t, 0.1, 0.15, 'sine');
+    sfxTone(ctx, 659, t + 0.14, 0.14, 0.18, 'sine');
+  },
+  // Prise en passant — son spécial (coup de vent)
+  enpassant() {
+    const ctx = getSfxCtx(); if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxTone(ctx, 600, t, 0.12, 0.1, 'sine', 200);
+    sfxNoise(ctx, t, 0.1, 0.15, 800);
+  },
+};
+
+function playSfx(name) {
+  if (!soundOn) return;
+  try { SFX[name]?.(); } catch(e) {}
+}
+
+document.getElementById('btn-sound').addEventListener('click', () => {
+  soundOn = !soundOn;
+  localStorage.setItem('soundOn', soundOn);
+  const btn = document.getElementById('btn-sound');
+  btn.textContent = soundOn ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundOn);
+  if (soundOn) playSfx('start');
+});
+
+// Init mute button state
+(function() {
+  const btn = document.getElementById('btn-sound');
+  if (!soundOn) { btn.textContent = '🔇'; btn.classList.add('muted'); }
+})();
+
 // --- BOARD THEMES ---
 const BOARD_THEMES = [
   { id:'classic', name:'Classique', light:'#f0d9b5', dark:'#b58863', ll:'#cdd16f', ld:'#aaa23a' },
@@ -3273,6 +4601,8 @@ const BOARD_THEMES = [
   { id:'marbre',  name:'Marbre',    light:'#e8e8e8', dark:'#5a5a5a', ll:'#cccc88', ld:'#3a3a20' },
   { id:'rose',    name:'Rose',      light:'#fce4ec', dark:'#c2185b', ll:'#f8bbd0', ld:'#880e4f' },
   { id:'sable',   name:'Sable',     light:'#fdf5e0', dark:'#8b6914', ll:'#eed890', ld:'#705000' },
+  { id:'dore',    name:'Doré',      light:'#fff8d0', dark:'#c8960c', ll:'#ffe866', ld:'#a07000', locked:true },
+  { id:'diamant', name:'Diamant',   light:'#e0f4ff', dark:'#1a6fa0', ll:'#b0e4ff', ld:'#0d4e78', locked:true },
 ];
 
 let boardThemeId = localStorage.getItem('boardTheme') || 'classic';
@@ -3295,18 +4625,548 @@ function buildThemeBar() {
   const bar = document.getElementById('theme-bar');
   bar.innerHTML = '<label>🎨</label>';
   BOARD_THEMES.forEach(t => {
+    const isLocked = t.locked && !trophyData.unlockedThemes.includes(t.id);
     const sw = document.createElement('div');
-    sw.className = 'theme-swatch' + (t.id === boardThemeId ? ' active' : '');
+    sw.className = 'theme-swatch' + (t.id === boardThemeId ? ' active' : '') + (isLocked ? ' locked' : '');
     sw.dataset.id = t.id;
-    sw.title = t.name;
+    sw.title = isLocked ? `🔒 ${t.name} — Débloqué en tournoi` : t.name;
     sw.style.background = `linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)`;
-    sw.addEventListener('click', () => applyBoardTheme(t.id));
+    sw.addEventListener('click', () => {
+      if (isLocked) { showHintToast(`🔒 Thème "${t.name}" — Gagne un tournoi pour débloquer !`); return; }
+      applyBoardTheme(t.id);
+    });
     bar.appendChild(sw);
   });
 }
 
+function showHintToast(msg) {
+  const t = document.getElementById('hint-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// === PRIZE SYSTEM ===
+const PRIZE_TIERS = [
+  { min:7, icon:'🏆', name:'Grand Maître', color:'#f0c040',
+    desc:'Tournoi parfait ! Tu as battu tous les bots du plus faible au plus fort !',
+    unlockedEmoji:'🏅', unlockedTheme:'diamant' },
+  { min:5, icon:'🥇', name:'Maître',       color:'#ffd700',
+    desc:'Excellent tournoi ! Tu domines l\'échiquier avec brio.',
+    unlockedEmoji:'🌟', unlockedTheme:'dore' },
+  { min:3, icon:'🥈', name:'Expert',       color:'#c0c0c0',
+    desc:'Belle performance ! Tu grimpes vers les sommets de l\'échiquier.',
+    unlockedEmoji:'⭐',  unlockedTheme:null },
+  { min:1, icon:'🥉', name:'Avancé',       color:'#cd7f32',
+    desc:'Tu as combattu courageusement. Continue à t\'améliorer !',
+    unlockedEmoji:null,  unlockedTheme:null },
+  { min:0, icon:'🎖️', name:'Participant',  color:'#888',
+    desc:'Tu as terminé le tournoi ! Chaque partie est une leçon.',
+    unlockedEmoji:null,  unlockedTheme:null },
+];
+
+let trophyData = JSON.parse(localStorage.getItem('trophyData') || '{"trophies":[],"unlockedEmojis":[],"unlockedThemes":[],"bestTitle":null,"bestTierIdx":99}');
+
+function saveTrophyData() { localStorage.setItem('trophyData', JSON.stringify(trophyData)); }
+
+function getPrizeTier(wins) {
+  return PRIZE_TIERS.find(t => wins >= t.min) || PRIZE_TIERS[PRIZE_TIERS.length - 1];
+}
+
+let pendingPrize = null;
+
+function awardTournamentPrize(wins, season) {
+  const tier = getPrizeTier(wins);
+  const tierIdx = PRIZE_TIERS.indexOf(tier);
+  trophyData.trophies.unshift({ ts: Date.now(), season, wins, icon: tier.icon, name: tier.name, color: tier.color });
+
+  const unlocked = [];
+  if (tier.unlockedEmoji && !trophyData.unlockedEmojis.includes(tier.unlockedEmoji)) {
+    trophyData.unlockedEmojis.push(tier.unlockedEmoji);
+    unlocked.push({ type: 'emoji', value: tier.unlockedEmoji });
+  }
+  if (tier.unlockedTheme && !trophyData.unlockedThemes.includes(tier.unlockedTheme)) {
+    trophyData.unlockedThemes.push(tier.unlockedTheme);
+    unlocked.push({ type: 'theme', value: tier.unlockedTheme });
+  }
+  if (tierIdx < (trophyData.bestTierIdx ?? 99)) {
+    trophyData.bestTierIdx = tierIdx;
+    trophyData.bestTitle   = tier.name;
+    trophyData.bestColor   = tier.color;
+  }
+
+  saveTrophyData();
+  renderTrophyRow();
+  buildThemeBar();
+
+  pendingPrize = { tier, wins, season, unlocked };
+}
+
+function renderTrophyRow() {
+  // Title badge
+  const titleEl = document.getElementById('profile-title');
+  if (trophyData.bestTitle) {
+    titleEl.textContent = trophyData.bestTitle;
+    titleEl.style.cssText = `display:inline-block;background:${trophyData.bestColor}22;color:${trophyData.bestColor};border:1px solid ${trophyData.bestColor}55`;
+  } else {
+    titleEl.style.display = 'none';
+  }
+  // Trophy chips
+  const row = document.getElementById('trophy-row');
+  if (!trophyData.trophies.length) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  row.innerHTML = '';
+  trophyData.trophies.slice(0, 10).forEach(t => {
+    const chip = document.createElement('span');
+    chip.className = 'trophy-chip';
+    chip.textContent = t.icon;
+    chip.title = `${t.name} — Saison ${t.season} (${t.wins}/7)`;
+    row.appendChild(chip);
+  });
+  if (trophyData.trophies.length > 10) {
+    const more = document.createElement('span');
+    more.style.cssText = 'font-size:0.62rem;color:#555;align-self:center;margin-left:2px';
+    more.textContent = `+${trophyData.trophies.length - 10}`;
+    row.appendChild(more);
+  }
+}
+
+function openPrizeModal(prize) {
+  if (!prize) { openTournamentModal(); return; }
+  const { tier, wins, season, unlocked } = prize;
+
+  // Animate border color
+  document.getElementById('prize-border').style.boxShadow = `0 0 0 2px ${tier.color}88, 0 0 40px ${tier.color}33`;
+
+  document.getElementById('prize-icon').textContent = tier.icon;
+  document.getElementById('prize-tier-name').textContent = tier.name;
+  document.getElementById('prize-tier-name').style.color = tier.color;
+  document.getElementById('prize-season').textContent = `Saison ${season} · ${wins}/7 victoire${wins!==1?'s':''}`;
+  document.getElementById('prize-desc').textContent = tier.desc;
+
+  const rewardsEl = document.getElementById('prize-rewards');
+  rewardsEl.innerHTML = '';
+  // Trophy card
+  const tc = document.createElement('div');
+  tc.className = 'prize-reward-card';
+  tc.innerHTML = `<span class="prize-reward-icon">${tier.icon}</span><div><strong>${tier.name}</strong><span class="prize-reward-label">Ajouté à ta collection</span></div>`;
+  rewardsEl.appendChild(tc);
+  // Unlocked emoji / theme
+  unlocked.forEach(u => {
+    const c = document.createElement('div');
+    c.className = 'prize-reward-card';
+    if (u.type === 'emoji') {
+      c.innerHTML = `<span class="prize-reward-icon">${u.value}</span><div><strong>Emoji débloqué !</strong><span class="prize-reward-label">Disponible dans l'avatar</span></div>`;
+    } else {
+      const th = BOARD_THEMES.find(t => t.id === u.value);
+      c.innerHTML = `<span class="prize-reward-icon">🎨</span><div><strong>Thème "${th?.name || u.value}"</strong><span class="prize-reward-label">Disponible dans l'échiquier</span></div>`;
+    }
+    rewardsEl.appendChild(c);
+  });
+
+  // Confetti
+  const conf = document.getElementById('prize-confetti');
+  conf.innerHTML = '';
+  const cols = ['#f0c040','#4caf50','#2196f3','#e91e63','#ff9800','#9c27b0','#00bcd4'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left   = (Math.random() * 100) + '%';
+    p.style.width  = (5 + Math.random() * 7) + 'px';
+    p.style.height = (8 + Math.random() * 9) + 'px';
+    p.style.background = cols[i % cols.length];
+    p.style.animationDelay    = (Math.random() * 1.5) + 's';
+    p.style.animationDuration = (2.0 + Math.random() * 2) + 's';
+    conf.appendChild(p);
+  }
+
+  document.getElementById('prize-modal').classList.add('show');
+  pendingPrize = null;
+}
+
+document.getElementById('btn-prize-close').addEventListener('click', () => {
+  document.getElementById('prize-modal').classList.remove('show');
+  openTournamentModal();
+});
+document.getElementById('prize-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('prize-modal')) {
+    document.getElementById('prize-modal').classList.remove('show');
+    openTournamentModal();
+  }
+});
+
+// === GAME HISTORY ===
+const HISTORY_MAX = 200;
+
+function loadGameHistory() {
+  return JSON.parse(localStorage.getItem('gameHistory') || '[]');
+}
+
+function saveGameToHistory(entry) {
+  const hist = loadGameHistory();
+  hist.unshift(entry);
+  if (hist.length > HISTORY_MAX) hist.length = HISTORY_MAX;
+  localStorage.setItem('gameHistory', JSON.stringify(hist));
+}
+
+function formatHistDate(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const time = d.toTimeString().slice(0, 5);
+  const dStr = d.toDateString();
+  if (dStr === now.toDateString()) return `Aujourd'hui · ${time}`;
+  const yest = new Date(now - 86400000);
+  if (dStr === yest.toDateString()) return `Hier · ${time}`;
+  const diff = (now - d) / 86400000;
+  const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  if (diff < 7) return `${days[d.getDay()]} · ${time}`;
+  const months = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() !== now.getFullYear() ? d.getFullYear() : ''} · ${time}`;
+}
+
+function renderHistoryModal(filter) {
+  filter = filter || 'all';
+  let hist = loadGameHistory();
+
+  // Apply filter
+  const filtered = hist.filter(e => {
+    if (filter === 'all') return true;
+    if (filter === 'cpu') return e.mode === 'cpu';
+    if (filter === 'tournament') return e.mode === 'tournament';
+    if (filter === '1v1') return e.mode === '1v1';
+    return true;
+  });
+
+  const countEl = document.getElementById('history-count');
+  countEl.textContent = filtered.length
+    ? `${filtered.length} partie${filtered.length > 1 ? 's' : ''}${hist.length > filtered.length ? ` · ${hist.length} au total` : ''}`
+    : '';
+
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.id = 'history-empty';
+    empty.innerHTML = `Aucune partie enregistrée.<br><span style="font-size:0.78rem">Les parties apparaissent ici après la fin.</span>`;
+    list.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(e => {
+    const card = document.createElement('div');
+    const resClass = e.result === 'win' || e.result === 'white' ? 'h-win'
+      : e.result === 'loss' || e.result === 'black' ? 'h-loss'
+      : 'h-draw';
+    card.className = `hist-entry ${resClass}`;
+
+    // Result icon
+    let icon, iconTitle;
+    if (e.mode === '1v1') {
+      icon = e.result === 'white' ? '♙' : e.result === 'black' ? '♟' : '🤝';
+      iconTitle = e.result === 'draw' ? 'Nulle' : `${e.result === 'white' ? 'Blancs' : 'Noirs'} gagnent`;
+    } else {
+      icon = e.result === 'win' ? '🏆' : e.result === 'loss' ? '❌' : '🤝';
+      iconTitle = e.result === 'win' ? 'Victoire' : e.result === 'loss' ? 'Défaite' : 'Nulle';
+    }
+
+    // Opponent display
+    let oppAvBg = '#333', oppAvEmoji = '?', oppName = '1v1 Local';
+    if (e.oppId) {
+      const bot = BOTS.find(b => b.id === e.oppId);
+      oppAvBg   = bot ? bot.color : (e.oppColor || '#333');
+      oppAvEmoji= bot ? bot.emoji : (e.oppEmoji || '🤖');
+      oppName   = bot ? `${bot.name} <span style="font-size:0.65rem;color:#888">${bot.elo} ELO</span>` : e.oppName;
+    } else {
+      oppAvBg = '#2a3a4a'; oppAvEmoji = '♟';
+    }
+
+    // ELO badge
+    let eloBadge = '';
+    if (e.eloChange !== 0 && e.eloChange !== undefined && e.eloChange !== null) {
+      const cls = e.eloChange > 0 ? 'pos' : e.eloChange < 0 ? 'neg' : 'zero';
+      const sign = e.eloChange > 0 ? '+' : '';
+      eloBadge = `<span class="hist-elo-badge ${cls}">${sign}${e.eloChange}</span>`;
+    }
+
+    // Extra badges
+    const badges = [];
+    if (e.is960)      badges.push('<span class="hist-badge b960">960</span>');
+    if (e.byTimeout)  badges.push('<span class="hist-badge btout">⏱ Temps</span>');
+    if (e.mode === 'tournament') badges.push('<span class="hist-badge btourn">🏆 Tournoi</span>');
+
+    const dur = e.duration ? formatDuration(e.duration) : '—';
+
+    // Player color indicator for cpu games
+    let colorBit = '';
+    if (e.playerColor === 'white') colorBit = ' · ♙ Blancs';
+    else if (e.playerColor === 'black') colorBit = ' · ♟ Noirs';
+
+    card.innerHTML = `
+      <div class="hist-result-icon" title="${iconTitle}">${icon}</div>
+      <div class="hist-opp-av" style="background:${oppAvBg}">${oppAvEmoji}</div>
+      <div class="hist-main">
+        <div class="hist-opp-name">${oppName}</div>
+        <div class="hist-meta">${e.moves || 0} coups · ${dur}${colorBit}</div>
+        ${badges.length ? `<div class="hist-badges">${badges.join('')}</div>` : ''}
+      </div>
+      <div class="hist-right">
+        ${eloBadge}
+        <div class="hist-date">${formatHistDate(e.ts)}</div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+let historyFilter = 'all';
+
+function openHistoryModal() {
+  renderHistoryModal(historyFilter);
+  document.getElementById('history-modal').classList.add('show');
+}
+
+// History modal events
+document.getElementById('btn-history-close').addEventListener('click', () => {
+  document.getElementById('history-modal').classList.remove('show');
+});
+document.getElementById('history-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('history-modal'))
+    document.getElementById('history-modal').classList.remove('show');
+});
+document.querySelectorAll('.hist-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.hist-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    historyFilter = tab.dataset.filter;
+    renderHistoryModal(historyFilter);
+  });
+});
+document.getElementById('btn-history-link').addEventListener('click', e => {
+  e.stopPropagation();
+  openHistoryModal();
+});
+
+// === BOT CHAT SYSTEM ===
+const BOT_CHAT = {
+  jake: {
+    greeting:          ["Salut ! Prêt pour une partie ?","Coucou ! J'espère qu'on va bien jouer !","Hello ! Je vais faire de mon mieux ! 😊"],
+    start:             ["C'est parti ! Bonne chance !","Yay, on joue ! 🎉","Allez, en avant !"],
+    capture_by_bot:    ["Oh ouais, j'ai pris ta pièce !!","Haha, prends ça !","YES !! 🙌","Oups, elle était là… je l'ai prise !"],
+    capture_by_player: ["Oh non 😢","J'aurais pas dû laisser ça là...","Aïe aïe aïe !","Nooon ma pièce !"],
+    check:             ["Échec !! 😱","Oh oh, t'es en échec !","Attention attention !!","Ton roi est en danger !"],
+    win_bot:           ["J'ai gagné !! Je savais que j'allais y arriver 🎉","YAY !! Victoire !! 🎉🎉"],
+    win_player:        ["Bien joué... t'es trop fort 😢","J'ai perdu... sniff... revanche ?","Tu m'as eu ! GG 👏"],
+    draw:              ["Match nul ! On est pareils !","C'est égal ! On recommence ?"],
+    idle:              ["C'est quoi ton ouverture préférée ?","Tu joues souvent aux échecs ?","J'apprends encore mais je progresse !","C'est fun les échecs !"],
+    player_says_good:  ["Merci ! 😊","T'es gentil !","Aww merci beaucoup !","😊❤️"],
+    player_says_bad:   ["C'est pas nice ça...","J'essaie de mon mieux ! 😢","C'est dur d'apprendre..."],
+    player_greets:     ["Salut !! 😄","Coucou !!","Hey hey !!"],
+    player_surrenders: ["Tu veux pas continuer ? 😢","Oh nooon reste !","La partie est pas finie !"],
+    default:           ["Hmm...","Intéressant !","Je réfléchis...","On verra bien !","Cool !"],
+  },
+  lisa: {
+    greeting:          ["Salut. Ne t'attends pas à gagner facilement.","Hey. T'es prêt à perdre ? 🦊","On joue ? Pas de pitié."],
+    start:             ["Que la partie commence.","Allez, montre-moi ce que tu vaux !","Je suis chaude. Commence."],
+    capture_by_bot:    ["Merci pour cette pièce 🦊","Hmm, pas assez protégée.","Prise ! Sans hésitation.","Cette pièce m'appartenait déjà."],
+    capture_by_player: ["Bon... ça arrive.","J'avais prévu ça.","Tactique valide. Mais la partie n'est pas finie.","OK, point pour toi."],
+    check:             ["Échec ! Tu t'y attendais ? 😏","Petit check pour toi 🦊","Attention à ton roi !","Vois-tu la menace ?"],
+    win_bot:           ["Comme prévu. Pas de surprise.","🦊 Victoire ! C'était écrit d'avance.","Facile."],
+    win_player:        ["Bien joué. Cette fois.","Je te laisse savourer… pour l'instant.","GG. Revanche ?"],
+    draw:              ["Nulle. Tu as eu de la chance.","On se retrouvera.","Cette fois tu t'en es sorti."],
+    idle:              ["Tu hésites ?","Le temps c'est une ressource aussi.","Réfléchis bien.","Dépêche-toi un peu."],
+    player_says_good:  ["Je sais.","Évidemment.","Tu commences à comprendre."],
+    player_says_bad:   ["Les perdants parlent, les gagnants jouent.","Concentre-toi sur l'échiquier.","Haha."],
+    player_greets:     ["Salut.","On est là pour jouer.","Hey."],
+    player_surrenders: ["Déjà ? C'est décevant.","Je m'attendais à plus de résistance."],
+    default:           ["Hmm.","On verra.","Continue.","Intéressant choix.","Hmhm."],
+  },
+  max: {
+    greeting:          ["Salut ! J'ai révisé mes ouvertures ce matin.","Hey ! Tu connais la Défense Nimzo-Indienne ?","Bonjour ! Je suis chaud pour jouer !"],
+    start:             ["J'ai préparé quelque chose de spécial.","Prépare-toi, j'ai étudié ça toute la semaine.","Ouverture d'abord, stratégie ensuite !"],
+    capture_by_bot:    ["Sacrifice calculé 😎","Cette prise était dans mon plan.","Matériel récupéré !","Exactement comme prévu."],
+    capture_by_player: ["C'était... volontaire.","Je le récupèrerai plus tard.","Dommage, c'était une pièce sacrifiée de toute façon.","Ça fait partie du plan."],
+    check:             ["Échec ! Comme dans ma préparation.","Vois-tu la menace ?","Pression sur le roi !","J'avais calculé ça !"],
+    win_bot:           ["L'étude paie toujours !","Mon plan a fonctionné parfaitement.","300 ouvertures révisées, ça aide."],
+    win_player:        ["Tu as bien joué... j'avais une erreur de calcul.","Je vais analyser ça ce soir.","Défaite instructive."],
+    draw:              ["Position équilibrée, comme prévu.","Bonne partie stratégique.","Nulle théorique, j'avais vu ça."],
+    idle:              ["Cette structure me rappelle Kasparov-Karpov 1985...","Tu connais le Gambit du roi ?","J'analyse chaque coup mentalement.","Quel est ton plan ici ?"],
+    player_says_good:  ["Merci, j'étudie beaucoup !","Je travaille dur !","Les progrès viennent avec l'effort !"],
+    player_says_bad:   ["Le niveau viendra avec la pratique.","C'est une erreur tactique, pas de niveau.","Je vais m'améliorer."],
+    player_greets:     ["Bonjour ! Prêt pour de belles combinaisons ?","Salut ! Partie intéressante en vue.","Hey ! On commence ?"],
+    player_surrenders: ["Tu peux rester, j'ai plein de plans !","Nooon continue !","La partie est encore ouverte !"],
+    default:           ["Coup instructif.","Intéressant...","Je réévalue la position.","Bonne idée.","Hmm, et maintenant ?"],
+  },
+  sara: {
+    greeting:          ["Bonjour. Concentrons-nous.","Salut. Jeu propre, s'il te plaît.","Je suis prête. Toi ?"],
+    start:             ["Position initiale. Tout est possible.","Que la meilleure joueuse gagne.","Ouverture ?"],
+    capture_by_bot:    ["Prise justifiée.","Matériel converti.","Position améliorée.","Gain clair."],
+    capture_by_player: ["Bien calculé.","Je m'adapte.","Ça change la dynamique.","Noté."],
+    check:             ["Échec. Gère ça.","Pression.","Roi en danger.","Tu vois la sortie ?"],
+    win_bot:           ["Victoire méritée. Bonne partie.","La préparation paye.","Résultat logique."],
+    win_player:        ["Bien joué. Je n'ai pas vu ce coup.","Tu m'as surprise. Respect.","GG."],
+    draw:              ["Résultat équitable.","Bonne résistance.","Nulle logique."],
+    idle:              ["Ne sous-estime pas tes pièces.","La structure de pions compte.","Chaque coup doit améliorer ta position.","Qu'est-ce que tu prépares ?"],
+    player_says_good:  ["Continue comme ça.","Merci.","Focus."],
+    player_says_bad:   ["Parle avec tes pièces.","L'échiquier répond à tout.","Je préfère les coups aux mots."],
+    player_greets:     ["Bonjour.","Prête.","On joue."],
+    player_surrenders: ["C'est ton choix.","La partie n'est pas perdue.","Continue."],
+    default:           ["Hmm.","Je vois.","Continue.","Bon coup.","D'accord."],
+  },
+  alex: {
+    greeting:          ["Salut. Ta structure de pions m'intéresse déjà.","Bonjour. J'espère une partie technique.","Hey. Montrons ce qu'on vaut."],
+    start:             ["La bataille commence. Stratégie avant tout.","Ouverture, milieu, finale. Trois phases.","Je prends les blancs. Structure solide."],
+    capture_by_bot:    ["Gain matériel avec initiative.","Cette prise crée des faiblesses.","Pièce gagnante.","Échange favorable."],
+    capture_by_player: ["Tu exploites bien cette case.","Gain justifié. Ma structure reste solide.","Bonne prise, mais l'initiative reste à moi.","Prise correcte."],
+    check:             ["Échec avec menace.","Ton roi est exposé.","La pression monte.","Regarde les cases autour de ton roi."],
+    win_bot:           ["Victoire technique. Ta structure était compromise.","Bien joué de ma part.","Position gagnée depuis le milieu de jeu."],
+    win_player:        ["Belle technique. Tu as mieux géré les cases clés.","Ta gestion des finales était excellente.","GG. Tu as vu plus loin."],
+    draw:              ["Position théoriquement nulle. Bonne défense.","Équilibre maintenu. Bonne partie.","Nulle méritée."],
+    idle:              ["Tes fous ont-ils de bonnes diagonales ?","Contrôle les cases clés du centre.","L'activité des pièces prime sur le matériel.","Qu'est-ce que tu planifies ?"],
+    player_says_good:  ["Merci. Mais je restais concentré.","Bien vu de ta part.","Le travail paye."],
+    player_says_bad:   ["Les erreurs font partie du jeu.","Je m'améliore à chaque partie.","Focus sur l'échiquier."],
+    player_greets:     ["Bonjour. Prêt pour une partie sérieuse ?","Salut. Technique ou tactique ?","Hey."],
+    player_surrenders: ["La résistance est une valeur.","Continue, la position est encore jouable.","Ne te rends pas."],
+    default:           ["Position complexe.","Je calcule.","Intéressant plan.","Hmm, plusieurs continuations.","D'accord."],
+  },
+  viktor: {
+    greeting:          ["Bienvenue sur ma table. Sois à la hauteur.","Tu veux jouer ? Bien. Prouve ta valeur.","L'échiquier ne ment pas. On verra."],
+    start:             ["La lutte commence. Chaque coup doit avoir un but.","Joue avec conviction. Ou perds avec.","Commençons."],
+    capture_by_bot:    ["Cette pièce était condamnée.","Inévitable.","Tu n'aurais pas dû laisser cette case ouverte.","Gain logique."],
+    capture_by_player: ["Gain méritoire. Mais n'exulte pas trop vite.","Tu as trouvé la faille. Elle ne se répètera pas.","Je l'avais vu. Je cherchais mieux.","Point pour toi."],
+    check:             ["Échec. Sens-tu la pression ?","Ton roi tremble.","La position se resserre.","Une menace de plus."],
+    win_bot:           ["Comme je le sentais. Ta résistance était vaine.","Victoire. Tu as bien lutté, mais ce n'était pas suffisant.","Le résultat logique."],
+    win_player:        ["... Bien joué. Tu m'as surpris.","Victoire méritée. Tu as vu des choses que je n'ai pas vues.","Felicitations. C'était mérité."],
+    draw:              ["Nulle. Tu as eu de la ressource.","Position nulle par force. Bonne défense.","Je n'ai pas trouvé la rupture."],
+    idle:              ["Chaque coup sans plan est un coup perdu.","L'initiative se prend, elle ne se donne pas.","Vois-tu la structure à venir ?","Pense à long terme."],
+    player_says_good:  ["Je joue toujours ainsi.","Évidemment.","Je n'accepte rien de moins."],
+    player_says_bad:   ["Les résultats parlent.","Prouve-le sur l'échiquier.","Les mots ne changent pas la position."],
+    player_greets:     ["...","Commençons.","Bonjour. Joue bien."],
+    player_surrenders: ["Pas encore. La partie mérite d'être jouée.","Continue. Même une position perdue enseigne quelque chose.","Résiste."],
+    default:           ["Hmm.","...","Je calcule.","Position tendue.","Tu vois la menace ?"],
+  },
+  magnus: {
+    greeting:          ["Hmm.","Bonjour.","On joue ?","..."],
+    start:             [".","Commence.","Ouverture ?","Hmm."],
+    capture_by_bot:    [".","Merci.","Logique.","Bien sûr."],
+    capture_by_player: ["Bien calculé.","Vu.","Je m'adapte.","D'accord."],
+    check:             ["Échec.","Gère.","Regarde bien.","Hmm."],
+    win_bot:           ["Victoire.","Comme prévu.","La position était gagnante depuis longtemps.","Logique."],
+    win_player:        ["Bien joué. Tu as vu quelque chose que j'ai raté.","Intéressant. Je n'avais pas calculé ce coup.","GG. Méritée."],
+    draw:              ["Nulle. Bonne défense.","Position théoriquement nulle.","OK."],
+    idle:              ["Tu avais mieux ici.","Cette prise était meilleure.","Pense à tes pions passés.","Hmm."],
+    player_says_good:  ["Merci.","Je sais.","."],
+    player_says_bad:   ["D'accord.","La position jugera.","Hmm."],
+    player_greets:     [".","Bonjour.","Hmm.","..."],
+    player_surrenders: ["Continue.","La position n'est pas encore perdue.","Joue."],
+    default:           ["Hmm.",".","Intéressant.","D'accord.","Je vois.","..."],
+  },
+};
+
+let chatOpen = true;
+
+function getBotLine(key) {
+  const lines = (BOT_CHAT[currentBot.id] || BOT_CHAT.jake)[key];
+  if (!lines || !lines.length) return null;
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
+function addChatMsg(text, type) {
+  const box = document.getElementById('chat-messages');
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg ' + type;
+  if (type === 'bot') {
+    const av = document.createElement('div');
+    av.className = 'chat-mini-avatar';
+    av.style.background = currentBot.color;
+    av.textContent = currentBot.emoji;
+    msg.appendChild(av);
+  } else {
+    const av = document.createElement('div');
+    av.className = 'chat-mini-avatar';
+    av.style.background = currentAvatar.color;
+    av.textContent = currentAvatar.emoji;
+    msg.appendChild(av);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.textContent = text;
+  msg.appendChild(bubble);
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+}
+
+function botSay(key, overrideText) {
+  const text = overrideText || getBotLine(key);
+  if (!text) return;
+  const box = document.getElementById('chat-messages');
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg bot';
+  const tAv = document.createElement('div');
+  tAv.className = 'chat-mini-avatar';
+  tAv.style.background = currentBot.color;
+  tAv.textContent = currentBot.emoji;
+  const tBubble = document.createElement('div');
+  tBubble.className = 'chat-bubble chat-typing-indicator';
+  tBubble.innerHTML = '<span></span><span></span><span></span>';
+  typing.appendChild(tAv);
+  typing.appendChild(tBubble);
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+  const delay = 600 + text.length * 18;
+  setTimeout(() => {
+    if (box.contains(typing)) box.removeChild(typing);
+    addChatMsg(text, 'bot');
+  }, delay);
+}
+
+function handleChatInput() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addChatMsg(text, 'player');
+  const lower = text.toLowerCase();
+  let key = 'default';
+  if (/bonjour|salut|hello|hi|hey|coucou/.test(lower))               key = 'player_greets';
+  else if (/bien|super|fort|bravo|gg|génial|impressionnant/.test(lower)) key = 'player_says_good';
+  else if (/nul|bête|mauvais|faible|idiot|mauvaise|nolevel/.test(lower)) key = 'player_says_bad';
+  else if (/abandonner|rendre|forfait|capitule/.test(lower))            key = 'player_surrenders';
+  setTimeout(() => botSay(key), 700 + Math.random() * 400);
+}
+
+function updateChatHeader() {
+  const panel = document.getElementById('chat-panel');
+  const icon  = document.getElementById('chat-bot-icon');
+  const label = document.getElementById('chat-bot-label');
+  if (gameMode === 'cpu') {
+    panel.classList.add('show');
+    icon.style.background = currentBot.color;
+    icon.textContent = currentBot.emoji;
+    label.textContent = currentBot.name;
+  } else {
+    panel.classList.remove('show');
+  }
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML = '';
+}
+
+// Chat header toggle
+document.getElementById('chat-header').addEventListener('click', () => {
+  document.getElementById('chat-panel').classList.toggle('collapsed');
+});
+
+// Send button + Enter key
+document.getElementById('chat-send').addEventListener('click', handleChatInput);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleChatInput();
+});
+
 buildThemeBar();
 applyBoardTheme(boardThemeId);
+renderTrophyRow();
 
 checkAndUpdateStreak();
 startGame();
