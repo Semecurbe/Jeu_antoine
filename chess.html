@@ -384,6 +384,34 @@
   .mode-btn.active { border-color: #f0c040; color: #f0c040; background: rgba(240,192,64,0.1); }
   .mode-btn:hover:not(.active) { border-color: #888; color: #eee; }
 
+  /* Bot picker */
+  #bot-pick {
+    display: none;
+    gap: 7px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 10px;
+    animation: fadeIn 0.25s ease;
+  }
+  #bot-pick.show { display: flex; }
+  .bot-card {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px 10px 6px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 64px;
+    gap: 2px;
+  }
+  .bot-card:hover { border-color: #aaa; background: rgba(255,255,255,0.08); }
+  .bot-card.selected { border-color: #f0c040; background: rgba(240,192,64,0.12); }
+  .bot-card-emoji { font-size: 1.6rem; line-height: 1; }
+  .bot-card-name  { font-size: 0.72rem; font-weight: bold; color: #ddd; }
+  .bot-card-elo   { font-size: 0.68rem; color: #888; }
+  .bot-card-diff  { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; font-weight: 700; }
+
   #thinking-bar {
     display: none;
     align-items: center;
@@ -529,6 +557,50 @@
   .psm-w { color: #4caf50; font-weight: bold; }
   .psm-d { color: #9e9e9e; }
   .psm-l { color: #f44336; }
+
+  #streak-row {
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 4px; font-size: 0.82rem;
+  }
+  #streak-fire { font-size: 1rem; animation: fireFlicker 1.4s ease-in-out infinite alternate; }
+  @keyframes fireFlicker {
+    from { filter: brightness(1) drop-shadow(0 0 2px #ff6b00); }
+    to   { filter: brightness(1.3) drop-shadow(0 0 6px #ff9500); }
+  }
+  #streak-count { font-weight: 800; color: #ff8c00; font-size: 0.95rem; }
+  #streak-label { color: #ccc; }
+  #streak-record { color: #666; font-size: 0.72rem; margin-left: 4px; }
+  #streak-row.streak-zero #streak-fire { animation: none; filter: grayscale(1) opacity(0.4); }
+
+  #streak-calendar {
+    display: flex; gap: 3px; margin-top: 5px;
+  }
+  .sc-day {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    transition: background 0.2s;
+    position: relative;
+  }
+  .sc-day.visited { background: #ff8c00; box-shadow: 0 0 4px rgba(255,140,0,0.6); }
+  .sc-day.today   { border: 2px solid #ff8c00; }
+  .sc-day.today.visited { background: #ff5500; }
+
+  #streak-toast {
+    position: fixed;
+    top: -90px;
+    left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff6b00, #ff9d00);
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 24px;
+    font-size: 1rem; font-weight: 700;
+    z-index: 9999;
+    box-shadow: 0 6px 30px rgba(255,107,0,0.5);
+    transition: top 0.45s cubic-bezier(0.175,0.885,0.32,1.275);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #streak-toast.show { top: 16px; }
 
   /* Avatar creator modal */
   #avatar-modal {
@@ -970,8 +1042,16 @@
       <span class="psm-d">= <span id="stat-draw">0%</span></span>
       <span class="psm-l">✘ <span id="stat-loss">0%</span></span>
     </div>
+    <div id="streak-row">
+      <span id="streak-fire">🔥</span>
+      <span id="streak-count">0</span>
+      <span id="streak-label">jour</span>
+      <span id="streak-record"></span>
+    </div>
+    <div id="streak-calendar"></div>
   </div>
 </div>
+<div id="streak-toast"></div>
 
 <!-- Hidden inputs for renderEloBadge compat -->
 <span id="elo-display" style="display:none">800</span>
@@ -1067,7 +1147,7 @@
 
 <div id="mode-bar">
   <button class="mode-btn active" id="btn-mode-1v1">👤 1v1</button>
-  <button class="mode-btn" id="btn-mode-cpu">🤖 vs Jake (200 ELO)</button>
+  <button class="mode-btn" id="btn-mode-cpu">🤖 vs Bot</button>
   <button class="mode-btn" id="btn-mode-async">✉️ Différé</button>
   <button class="mode-btn" id="btn-mode-learn">📚 Apprendre</button>
   <span id="color-pick" style="display:none; gap:8px; align-items:center;">
@@ -1077,11 +1157,13 @@
   </span>
 </div>
 
+<div id="bot-pick"></div>
+
 <div id="thinking-bar">
   <div class="thinking-dot"></div>
   <div class="thinking-dot"></div>
   <div class="thinking-dot"></div>
-  <span>Jake réfléchit…</span>
+  <span id="thinking-name">… réfléchit</span>
 </div>
 
 <!-- Async banner (active game indicator) -->
@@ -1161,7 +1243,7 @@
       <div class="bilan-player-row" id="b-row-black"></div>
     </div>
     <div id="bilan-stats-section">
-      <h3>Historique vs Jake</h3>
+      <h3 id="bilan-stats-title">Historique vs Bot</h3>
       <div id="bilan-stat-track">
         <div id="bst-win"></div>
         <div id="bst-draw"></div>
@@ -1768,6 +1850,7 @@ function importAsyncCode(code) {
 
 // Async UI events
 document.getElementById('btn-mode-async').addEventListener('click', () => {
+  hideBotUI();
   renderAsyncList();
   document.getElementById('async-modal').classList.add('show');
 });
@@ -1832,6 +1915,65 @@ function saveAvatar(av) {
 let currentAvatar = loadAvatar();
 let avDraft = {...currentAvatar};
 
+// --- STREAK SYSTEM ---
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function loadStreakData() {
+  return JSON.parse(localStorage.getItem('streakData') || '{"count":0,"lastDate":null,"record":0,"history":[]}');
+}
+function saveStreakData(d) { localStorage.setItem('streakData', JSON.stringify(d)); }
+
+let streakData = loadStreakData();
+let streakIsNew = false; // true if this is the first visit today
+
+function checkAndUpdateStreak() {
+  const t = today();
+  const d = loadStreakData();
+  if (d.lastDate === t) { streakData = d; return; } // already checked in today
+
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (d.lastDate === yesterday) {
+    d.count++;
+  } else {
+    d.count = 1;
+  }
+  d.lastDate = t;
+  d.record = Math.max(d.record || 0, d.count);
+  if (!d.history) d.history = [];
+  d.history.push(t);
+  if (d.history.length > 30) d.history = d.history.slice(-30);
+  saveStreakData(d);
+  streakData = d;
+  streakIsNew = true;
+}
+
+function renderStreakUI() {
+  const d = streakData;
+  const row = document.getElementById('streak-row');
+  document.getElementById('streak-count').textContent = d.count;
+  document.getElementById('streak-label').textContent = d.count <= 1 ? 'jour' : 'jours';
+  row.classList.toggle('streak-zero', d.count === 0);
+  const rec = d.record || d.count;
+  document.getElementById('streak-record').textContent = rec > d.count ? `(record : ${rec})` : rec === d.count && d.count > 1 ? '🏆 record !' : '';
+  // 7-day calendar
+  const cal = document.getElementById('streak-calendar');
+  cal.innerHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const dt = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const dot = document.createElement('div');
+    dot.className = 'sc-day' + ((d.history||[]).includes(dt) ? ' visited' : '') + (i === 0 ? ' today' : '');
+    dot.title = dt;
+    cal.appendChild(dot);
+  }
+}
+
+function showStreakToast(count) {
+  const toast = document.getElementById('streak-toast');
+  toast.textContent = count === 1 ? '🎉 Bienvenue ! Série lancée !' : `🔥 ${count} jours de suite !`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
 function renderProfileCard() {
   const av = currentAvatar;
   document.getElementById('avatar-circle').textContent = av.emoji;
@@ -1839,6 +1981,7 @@ function renderProfileCard() {
   document.getElementById('profile-name').textContent = av.name || 'Joueur';
   document.getElementById('profile-elo').textContent = `⚡ ELO ${playerElo}`;
   renderStatsPills();
+  renderStreakUI();
 }
 
 function openAvatarModal() {
@@ -2493,7 +2636,7 @@ function renderStatus() {
     const isPlayerTurn = turn === playerColor;
     ti.textContent = isPlayerTurn
       ? (turn==='white' ? '♙ Votre tour' : '♟ Votre tour')
-      : `🤖 Tour de Jake`;
+      : `${currentBot.emoji} Tour de ${currentBot.name}`;
   } else if (gameMode === 'async' && asyncActiveId) {
     const games = asyncGames();
     const g = games.find(x => x.id === asyncActiveId);
@@ -2640,15 +2783,16 @@ function showBilan(winner, byTimeout=false) {
   const cpuColor = playerColor === 'white' ? 'black' : 'white';
   let trophy, title, sub;
   const winSub  = byTimeout ? 'Victoire au temps' : 'Victoire par échec et mat';
-  const jakeSub = byTimeout ? 'Temps écoulé — Jake gagne au temps.' : 'Échec et mat — Jake a eu le dessus.';
+  const botName = currentBot.name;
+  const botSub = byTimeout ? `Temps écoulé — ${botName} gagne au temps.` : `Échec et mat — ${botName} a eu le dessus.`;
   const youSub  = byTimeout ? 'Temps écoulé — vous gagnez au temps !' : 'Victoire par échec et mat — bravo !';
   if (!winner) {
     trophy = '🤝'; title = 'Match nul — Pat !'; sub = 'Aucun coup légal disponible';
   } else if (gameMode === 'cpu') {
     if (winner === playerColor) {
-      trophy = '🏆'; title = 'Vous avez battu Jake !'; sub = youSub;
+      trophy = '🏆'; title = `Vous avez battu ${botName} !`; sub = youSub;
     } else {
-      trophy = '🤖'; title = 'Jake gagne !'; sub = jakeSub;
+      trophy = currentBot.emoji; title = `${botName} gagne !`; sub = botSub;
     }
   } else {
     trophy = '🏆';
@@ -2682,14 +2826,15 @@ function showBilan(winner, byTimeout=false) {
 
   const av = currentAvatar;
   const avTag = `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${av.color};font-size:13px;margin-right:5px;flex-shrink:0">${av.emoji}</span>`;
-  const jakeTag = `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#333;font-size:13px;margin-right:5px">🤖</span>`;
+  const botTag = `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${currentBot.color};font-size:13px;margin-right:5px">${currentBot.emoji}</span>`;
+  const botLabel = `${botTag}${currentBot.name} <span style="font-size:0.7rem;color:#888">(${currentBot.elo})</span>`;
 
   const playerLabel = av.name || 'Vous';
   const nameW = gameMode==='cpu'
-    ? (playerColor==='white' ? `${avTag}${playerLabel}` : `${jakeTag}Jake`)
+    ? (playerColor==='white' ? `${avTag}${playerLabel}` : botLabel)
     : '♙ Blancs';
   const nameB = gameMode==='cpu'
-    ? (playerColor==='black' ? `${avTag}${playerLabel}` : `${jakeTag}Jake`)
+    ? (playerColor==='black' ? `${avTag}${playerLabel}` : botLabel)
     : '♟ Noirs';
 
   const rowW = document.getElementById('b-row-white');
@@ -2718,7 +2863,7 @@ function showBilan(winner, byTimeout=false) {
     const score = winner === playerColor ? 1 : winner === null ? 0.5 : 0;
 
     // ELO
-    const change = calcEloChange(playerElo, JAKE_ELO, score);
+    const change = calcEloChange(playerElo, currentBot.elo, score);
     const oldElo = playerElo;
     playerElo = Math.max(100, playerElo + change);
     saveElo(playerElo);
@@ -2738,6 +2883,7 @@ function showBilan(winner, byTimeout=false) {
     document.getElementById('bilan-elo-new').textContent = `Nouvel ELO : ${playerElo}`;
 
     // Stats section
+    document.getElementById('bilan-stats-title').textContent = `Historique vs ${currentBot.name}`;
     statsSection.classList.add('show');
     const total = s.w + s.d + s.l;
     const wp = total ? s.w / total * 100 : 0;
@@ -2757,39 +2903,210 @@ function showBilan(winner, byTimeout=false) {
   document.getElementById('bilan-modal').classList.add('show');
 }
 
-// --- 200 ELO AI ---
-const AI_PIECE_VAL = { Q:9, R:5, B:3, N:3, P:1, K:0 };
+// --- BOTS ---
+const BOTS = [
+  { id:'jake',   name:'Jake',   elo:200,  emoji:'🤖', color:'#546e7a', diff:'Novice',       diffColor:'#78909c' },
+  { id:'lisa',   name:'Lisa',   elo:500,  emoji:'🦊', color:'#d84315', diff:'Débutant',     diffColor:'#ff7043' },
+  { id:'max',    name:'Max',    elo:800,  emoji:'🐺', color:'#e65100', diff:'Amateur',      diffColor:'#ff9800' },
+  { id:'sara',   name:'Sara',   elo:1100, emoji:'🦁', color:'#2e7d32', diff:'Intermédiaire',diffColor:'#66bb6a' },
+  { id:'alex',   name:'Alex',   elo:1400, emoji:'🐉', color:'#1565c0', diff:'Avancé',       diffColor:'#42a5f5' },
+  { id:'viktor', name:'Viktor', elo:1700, emoji:'🧠', color:'#6a1b9a', diff:'Expert',       diffColor:'#ab47bc' },
+  { id:'magnus', name:'Magnus', elo:2000, emoji:'👑', color:'#b8860b', diff:'Maître',       diffColor:'#f0c040' },
+];
+let currentBot = BOTS[0];
+
+// Centipawn material values
+const CP_VAL = { P:100, N:320, B:330, R:500, Q:900, K:20000 };
+
+// Piece-square tables (from white's perspective; row 0=rank8, row 7=rank1)
+const PST = {
+  P: [[  0,  0,  0,  0,  0,  0,  0,  0],
+      [ 50, 50, 50, 50, 50, 50, 50, 50],
+      [ 10, 10, 20, 30, 30, 20, 10, 10],
+      [  5,  5, 10, 25, 25, 10,  5,  5],
+      [  0,  0,  0, 20, 20,  0,  0,  0],
+      [  5, -5,-10,  0,  0,-10, -5,  5],
+      [  5, 10, 10,-20,-20, 10, 10,  5],
+      [  0,  0,  0,  0,  0,  0,  0,  0]],
+  N: [[-50,-40,-30,-30,-30,-30,-40,-50],
+      [-40,-20,  0,  0,  0,  0,-20,-40],
+      [-30,  0, 10, 15, 15, 10,  0,-30],
+      [-30,  5, 15, 20, 20, 15,  5,-30],
+      [-30,  0, 15, 20, 20, 15,  0,-30],
+      [-30,  5, 10, 15, 15, 10,  5,-30],
+      [-40,-20,  0,  5,  5,  0,-20,-40],
+      [-50,-40,-30,-30,-30,-30,-40,-50]],
+  B: [[-20,-10,-10,-10,-10,-10,-10,-20],
+      [-10,  0,  0,  0,  0,  0,  0,-10],
+      [-10,  0,  5, 10, 10,  5,  0,-10],
+      [-10,  5,  5, 10, 10,  5,  5,-10],
+      [-10,  0, 10, 10, 10, 10,  0,-10],
+      [-10, 10, 10, 10, 10, 10, 10,-10],
+      [-10,  5,  0,  0,  0,  0,  5,-10],
+      [-20,-10,-10,-10,-10,-10,-10,-20]],
+  R: [[  0,  0,  0,  0,  0,  0,  0,  0],
+      [  5, 10, 10, 10, 10, 10, 10,  5],
+      [ -5,  0,  0,  0,  0,  0,  0, -5],
+      [ -5,  0,  0,  0,  0,  0,  0, -5],
+      [ -5,  0,  0,  0,  0,  0,  0, -5],
+      [ -5,  0,  0,  0,  0,  0,  0, -5],
+      [ -5,  0,  0,  0,  0,  0,  0, -5],
+      [  0,  0,  0,  5,  5,  0,  0,  0]],
+  Q: [[-20,-10,-10, -5, -5,-10,-10,-20],
+      [-10,  0,  0,  0,  0,  0,  0,-10],
+      [-10,  0,  5,  5,  5,  5,  0,-10],
+      [ -5,  0,  5,  5,  5,  5,  0, -5],
+      [  0,  0,  5,  5,  5,  5,  0, -5],
+      [-10,  5,  5,  5,  5,  5,  0,-10],
+      [-10,  0,  5,  0,  0,  0,  0,-10],
+      [-20,-10,-10, -5, -5,-10,-10,-20]],
+  K: [[-30,-40,-40,-50,-50,-40,-40,-30],
+      [-30,-40,-40,-50,-50,-40,-40,-30],
+      [-30,-40,-40,-50,-50,-40,-40,-30],
+      [-30,-40,-40,-50,-50,-40,-40,-30],
+      [-20,-30,-30,-40,-40,-30,-30,-20],
+      [-10,-20,-20,-20,-20,-20,-20,-10],
+      [ 20, 20,  0,  0,  0,  0, 20, 20],
+      [ 20, 30, 10,  0,  0, 10, 30, 20]],
+};
+
+function evalBoard(b) {
+  let score = 0;
+  for (let r=0; r<8; r++) for (let c=0; c<8; c++) {
+    const p = b[r][c];
+    if (!p) continue;
+    const pr = p.color==='white' ? r : 7-r;
+    const pst = PST[p.kind] ? PST[p.kind][pr][c] : 0;
+    const val = CP_VAL[p.kind] + pst;
+    score += p.color==='white' ? val : -val;
+  }
+  return score;
+}
+
+function minimax(b, depth, alpha, beta, maxing, epSq) {
+  const col = maxing ? 'white' : 'black';
+  const moves = allLegalMoves(b, col, epSq);
+  if (moves.length === 0) return inCheck(b, col) ? (maxing ? -99000 : 99000) : 0;
+  if (depth === 0) return evalBoard(b);
+
+  // Move ordering: captures first for better alpha-beta pruning
+  moves.sort((a, x) => {
+    const ca = b[a[2]][a[3]] ? CP_VAL[b[a[2]][a[3]].kind] : 0;
+    const cx = b[x[2]][x[3]] ? CP_VAL[b[x[2]][x[3]].kind] : 0;
+    return cx - ca;
+  });
+
+  if (maxing) {
+    let best = -Infinity;
+    for (const [r,c,nr,nc] of moves) {
+      const res = applyMove(b,r,c,nr,nc,epSq);
+      best = Math.max(best, minimax(res.board,depth-1,alpha,beta,false,res.newEp));
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const [r,c,nr,nc] of moves) {
+      const res = applyMove(b,r,c,nr,nc,epSq);
+      best = Math.min(best, minimax(res.board,depth-1,alpha,beta,true,res.newEp));
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
 
 function cpuPickMove() {
-  const color = playerColor === 'white' ? 'black' : 'white';
-  const moves = allLegalMoves(board, color, enPassant);
+  const botColor = playerColor === 'white' ? 'black' : 'white';
+  const isMaxing = botColor === 'white';
+  const moves = allLegalMoves(board, botColor, enPassant);
   if (!moves.length) return null;
 
-  // Separate captures from quiet moves
-  const captures = moves.filter(([r,c,nr,nc]) => board[nr][nc] !== null);
-  const quiet    = moves.filter(([r,c,nr,nc]) => board[nr][nc] === null);
+  const elo = currentBot.elo;
 
-  const rand = Math.random();
-
-  // 200 ELO behaviour:
-  // 10% : take the highest value piece visible (rare burst of brilliance)
-  // 25% : take any random capture
-  // 65% : random quiet move (or random overall if no quiet moves)
-
-  if (rand < 0.10 && captures.length) {
-    // Best capture
-    captures.sort((a,b) => {
-      const va = AI_PIECE_VAL[board[b[2]][b[3]]?.kind||'P'] || 0;
-      const vb = AI_PIECE_VAL[board[a[2]][a[3]]?.kind||'P'] || 0;
-      return va - vb;
-    });
-    return captures[0];
+  // --- Jake 200: mostly random ---
+  if (elo <= 200) {
+    const caps = moves.filter(([r,c,nr,nc]) => board[nr][nc]);
+    const quiet = moves.filter(([r,c,nr,nc]) => !board[nr][nc]);
+    const rand = Math.random();
+    if (rand < 0.10 && caps.length) {
+      caps.sort((a,b) => (CP_VAL[board[b[2]][b[3]]?.kind]||0)-(CP_VAL[board[a[2]][a[3]]?.kind]||0));
+      return caps[0];
+    }
+    if (rand < 0.35 && caps.length) return caps[Math.floor(Math.random()*caps.length)];
+    return (quiet.length ? quiet : moves)[Math.floor(Math.random()*(quiet.length||moves.length))];
   }
-  if (rand < 0.35 && captures.length) {
-    return captures[Math.floor(Math.random() * captures.length)];
+
+  // --- Lisa 500: greedy best capture, else random ---
+  if (elo <= 500) {
+    const caps = moves.filter(([r,c,nr,nc]) => board[nr][nc]);
+    if (caps.length && Math.random() < 0.75) {
+      caps.sort((a,b) => {
+        const gain = m => (CP_VAL[board[m[2]][m[3]]?.kind]||0) - (CP_VAL[board[m[0]][m[1]]?.kind]||0);
+        return gain(b) - gain(a);
+      });
+      return caps[0];
+    }
+    return moves[Math.floor(Math.random()*moves.length)];
   }
-  const pool = quiet.length ? quiet : moves;
-  return pool[Math.floor(Math.random() * pool.length)];
+
+  // --- Max 800: 1-ply minimax, 25% random error ---
+  if (elo <= 800) {
+    if (Math.random() < 0.25) return moves[Math.floor(Math.random()*moves.length)];
+    let best = isMaxing ? -Infinity : Infinity;
+    let bestMove = moves[0];
+    for (const [r,c,nr,nc] of moves) {
+      const res = applyMove(board,r,c,nr,nc,enPassant);
+      const score = evalBoard(res.board);
+      if (isMaxing ? score > best : score < best) { best = score; bestMove = [r,c,nr,nc]; }
+    }
+    return bestMove;
+  }
+
+  // --- Sara 1100: 2-ply minimax, 12% random error ---
+  if (elo <= 1100) {
+    if (Math.random() < 0.12) return moves[Math.floor(Math.random()*moves.length)];
+    let best = isMaxing ? -Infinity : Infinity;
+    let bestMove = moves[0];
+    for (const [r,c,nr,nc] of moves) {
+      const res = applyMove(board,r,c,nr,nc,enPassant);
+      const score = minimax(res.board,1,-Infinity,Infinity,!isMaxing,res.newEp);
+      if (isMaxing ? score > best : score < best) { best = score; bestMove = [r,c,nr,nc]; }
+    }
+    return bestMove;
+  }
+
+  // --- Alex 1400: 2-ply minimax with PST, 5% error ---
+  if (elo <= 1400) {
+    if (Math.random() < 0.05) return moves[Math.floor(Math.random()*moves.length)];
+    let best = isMaxing ? -Infinity : Infinity;
+    let bestMove = moves[0];
+    const shuffled = [...moves].sort(()=>Math.random()-0.5); // slight randomness among equals
+    for (const [r,c,nr,nc] of shuffled) {
+      const res = applyMove(board,r,c,nr,nc,enPassant);
+      const score = minimax(res.board,1,-Infinity,Infinity,!isMaxing,res.newEp);
+      if (isMaxing ? score > best : score < best) { best = score; bestMove = [r,c,nr,nc]; }
+    }
+    return bestMove;
+  }
+
+  // --- Viktor 1700 & Magnus 2000: depth 2 full minimax ---
+  const depth = elo <= 1700 ? 2 : 3;
+  let best = isMaxing ? -Infinity : Infinity;
+  let bestMoves = [];
+  moves.sort((a,x)=>{
+    const ca = board[a[2]][a[3]] ? CP_VAL[board[a[2]][a[3]].kind] : 0;
+    const cx = board[x[2]][x[3]] ? CP_VAL[board[x[2]][x[3]].kind] : 0;
+    return cx - ca;
+  });
+  for (const [r,c,nr,nc] of moves) {
+    const res = applyMove(board,r,c,nr,nc,enPassant);
+    const score = minimax(res.board,depth-1,-Infinity,Infinity,!isMaxing,res.newEp);
+    if (isMaxing ? score > best : score < best) { best = score; bestMoves = [[r,c,nr,nc]]; }
+    else if (score === best) bestMoves.push([r,c,nr,nc]);
+  }
+  return bestMoves[Math.floor(Math.random()*bestMoves.length)];
 }
 
 function setThinking(on) {
@@ -2805,8 +3122,10 @@ function scheduleCpuMove() {
   if (!legal.length) return;
 
   cpuThinking = true;
+  document.getElementById('thinking-name').textContent = `${currentBot.emoji} ${currentBot.name} réfléchit…`;
   setThinking(true);
-  const delay = 400 + Math.random() * 700; // 0.4–1.1s
+  // Higher ELO bots actually compute longer, so add real compute time + UX delay
+  const baseDelay = currentBot.elo <= 500 ? 400 + Math.random()*700 : 250;
   setTimeout(() => {
     if (!cpuThinking) return;
     cpuThinking = false;
@@ -2815,26 +3134,53 @@ function scheduleCpuMove() {
     if (!move) return;
     const [r,c,nr,nc] = move;
     const piece = board[r][c];
-    // Auto-promote to queen
     const promo = (piece?.kind==='P' && (nr===0||nr===7)) ? 'Q' : 'Q';
     doMove(r, c, nr, nc, promo);
-  }, delay);
+  }, baseDelay);
 }
 
 // --- Mode UI ---
+function hideBotUI() {
+  document.getElementById('bot-pick').classList.remove('show');
+  document.getElementById('color-pick').style.display = 'none';
+}
+
 document.getElementById('btn-mode-1v1').addEventListener('click', () => {
   gameMode = '1v1';
   document.getElementById('btn-mode-1v1').classList.add('active');
   document.getElementById('btn-mode-cpu').classList.remove('active');
-  document.getElementById('color-pick').style.display = 'none';
+  hideBotUI();
   startGame();
 });
+
+function buildBotPicker() {
+  const container = document.getElementById('bot-pick');
+  container.innerHTML = '';
+  BOTS.forEach(bot => {
+    const card = document.createElement('div');
+    card.className = 'bot-card' + (bot.id === currentBot.id ? ' selected' : '');
+    card.innerHTML = `
+      <span class="bot-card-emoji">${bot.emoji}</span>
+      <span class="bot-card-name">${bot.name}</span>
+      <span class="bot-card-elo">${bot.elo} ELO</span>
+      <span class="bot-card-diff" style="color:${bot.diffColor}">${bot.diff}</span>`;
+    card.addEventListener('click', () => {
+      currentBot = bot;
+      container.querySelectorAll('.bot-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      startGame();
+    });
+    container.appendChild(card);
+  });
+}
 
 document.getElementById('btn-mode-cpu').addEventListener('click', () => {
   gameMode = 'cpu';
   document.getElementById('btn-mode-cpu').classList.add('active');
   document.getElementById('btn-mode-1v1').classList.remove('active');
+  document.getElementById('bot-pick').classList.add('show');
   document.getElementById('color-pick').style.display = 'flex';
+  buildBotPicker();
   startGame();
 });
 
@@ -2885,8 +3231,10 @@ document.getElementById('btn-undo').addEventListener('click', () => {
   render();
 });
 
+checkAndUpdateStreak();
 startGame();
 renderProfileCard();
+if (streakIsNew) setTimeout(() => showStreakToast(streakData.count), 800);
 </script>
 </body>
 </html>
