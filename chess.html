@@ -143,8 +143,14 @@
     transition: background 0.15s;
   }
 
-  .square.light { background: #f0d9b5; }
-  .square.dark  { background: #b58863; }
+  :root {
+    --sq-light: #f0d9b5;
+    --sq-dark:  #b58863;
+    --sq-ll:    #cdd16f;
+    --sq-ld:    #aaa23a;
+  }
+  .square.light { background: var(--sq-light); }
+  .square.dark  { background: var(--sq-dark);  }
 
   .square.selected { background: #f6f669 !important; }
   .square.legal-move::after {
@@ -172,8 +178,8 @@
   }
   .square.in-check { background: #ff4444 !important; }
   .square.last-move { background: rgba(200,200,0,0.45) !important; }
-  .square.last-move.light { background: #cdd16f !important; }
-  .square.last-move.dark  { background: #aaa23a !important; }
+  .square.last-move.light { background: var(--sq-ll) !important; }
+  .square.last-move.dark  { background: var(--sq-ld) !important; }
 
   .piece { line-height: 1; cursor: grab; transition: transform 0.1s; }
   .piece:active { cursor: grabbing; transform: scale(1.15); }
@@ -217,6 +223,27 @@
   button:active { transform: translateY(0); }
   #btn-restart { background: #f0c040; color: #111; }
   #btn-undo    { background: #444; color: #eee; }
+
+  /* Board theme picker */
+  #theme-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #theme-bar label { font-size: 0.78rem; color: #666; }
+  .theme-swatch {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  .theme-swatch:hover { transform: scale(1.18); }
+  .theme-swatch.active { border-color: #f0c040; transform: scale(1.15); }
 
   /* Promotion modal */
   #promo-modal {
@@ -1212,6 +1239,9 @@
 <div id="controls">
   <button id="btn-undo">↩ Annuler</button>
   <button id="btn-restart">↺ Nouvelle partie</button>
+</div>
+<div id="theme-bar">
+  <label>🎨</label>
 </div>
 
 <div id="promo-modal">
@@ -3230,6 +3260,53 @@ document.getElementById('btn-undo').addEventListener('click', () => {
   legalSquares = [];
   render();
 });
+
+// --- BOARD THEMES ---
+const BOARD_THEMES = [
+  { id:'classic', name:'Classique', light:'#f0d9b5', dark:'#b58863', ll:'#cdd16f', ld:'#aaa23a' },
+  { id:'nuit',    name:'Nuit',      light:'#6b6b8a', dark:'#2a2845', ll:'#7a7aaa', ld:'#3a3870' },
+  { id:'ocean',   name:'Océan',     light:'#c8e6f8', dark:'#1565c0', ll:'#90cce8', ld:'#0d47a1' },
+  { id:'foret',   name:'Forêt',     light:'#d4edda', dark:'#2d6a4f', ll:'#aad5b5', ld:'#1a4a35' },
+  { id:'violet',  name:'Violet',    light:'#e8d5f5', dark:'#6a1b9a', ll:'#d0a8f0', ld:'#4a0a7a' },
+  { id:'ardoise', name:'Ardoise',   light:'#d8e3ec', dark:'#455a64', ll:'#b0c8d8', ld:'#263238' },
+  { id:'corail',  name:'Corail',    light:'#ffd5c2', dark:'#b53e1a', ll:'#ffb090', ld:'#8a2500' },
+  { id:'marbre',  name:'Marbre',    light:'#e8e8e8', dark:'#5a5a5a', ll:'#cccc88', ld:'#3a3a20' },
+  { id:'rose',    name:'Rose',      light:'#fce4ec', dark:'#c2185b', ll:'#f8bbd0', ld:'#880e4f' },
+  { id:'sable',   name:'Sable',     light:'#fdf5e0', dark:'#8b6914', ll:'#eed890', ld:'#705000' },
+];
+
+let boardThemeId = localStorage.getItem('boardTheme') || 'classic';
+
+function applyBoardTheme(id) {
+  const t = BOARD_THEMES.find(x => x.id === id) || BOARD_THEMES[0];
+  boardThemeId = t.id;
+  localStorage.setItem('boardTheme', t.id);
+  const r = document.documentElement;
+  r.style.setProperty('--sq-light', t.light);
+  r.style.setProperty('--sq-dark',  t.dark);
+  r.style.setProperty('--sq-ll',    t.ll);
+  r.style.setProperty('--sq-ld',    t.ld);
+  document.querySelectorAll('.theme-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.id === t.id);
+  });
+}
+
+function buildThemeBar() {
+  const bar = document.getElementById('theme-bar');
+  bar.innerHTML = '<label>🎨</label>';
+  BOARD_THEMES.forEach(t => {
+    const sw = document.createElement('div');
+    sw.className = 'theme-swatch' + (t.id === boardThemeId ? ' active' : '');
+    sw.dataset.id = t.id;
+    sw.title = t.name;
+    sw.style.background = `linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)`;
+    sw.addEventListener('click', () => applyBoardTheme(t.id));
+    bar.appendChild(sw);
+  });
+}
+
+buildThemeBar();
+applyBoardTheme(boardThemeId);
 
 checkAndUpdateStreak();
 startGame();
