@@ -1,5 +1,5 @@
-const CACHE = 'echecs-v1';
-const ASSETS = ['./chess.html', './manifest.json', './icon.svg'];
+const CACHE = 'echecs-v2';
+const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(

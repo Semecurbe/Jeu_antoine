@@ -2,7 +2,7 @@
   "name": "Échecs",
   "short_name": "Échecs",
   "description": "Jeu d'échecs complet : bots, tournois, Chess960, apprentissage",
-  "start_url": "./chess.html",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f0d9b5",
@@ -26,12 +26,12 @@
   "shortcuts": [
     {
       "name": "Jouer vs IA",
-      "url": "./chess.html?mode=cpu",
+      "url": "./?mode=cpu",
       "description": "Démarrer une partie contre un bot"
     },
     {
       "name": "Tournoi",
-      "url": "./chess.html?mode=tournament",
+      "url": "./?mode=tournament",
       "description": "Ouvrir le tournoi"
     }
   ]
