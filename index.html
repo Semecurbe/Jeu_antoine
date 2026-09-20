@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Les jeux d'Antoine : un jeu d'échecs complet et Front de Fer, un jeu de stratégie.">
+<meta name="theme-color" content="#1a1a2e">
+<title>Les jeux d'Antoine</title>
+<link rel="icon" href="echecs/icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --bg2: #16213e;
+    --card: #1f2a48;
+    --card-hover: #26335a;
+    --text: #eaeaf2;
+    --muted: #a3a8c3;
+    --accent: #f0d9b5;
+    --accent2: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, var(--bg2), var(--bg) 70%);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px;
+  }
+  header { text-align: center; margin-bottom: 40px; }
+  h1 { font-size: clamp(2rem, 6vw, 3.2rem); margin: 0 0 8px; letter-spacing: .02em; }
+  header p { color: var(--muted); margin: 0; font-size: 1.05rem; }
+  main {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 820px;
+  }
+  .game {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 28px 24px;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .game:hover, .game:focus-visible {
+    transform: translateY(-4px);
+    background: var(--card-hover);
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    outline: none;
+  }
+  .game .icon { font-size: 3rem; line-height: 1; }
+  .game h2 { margin: 0; font-size: 1.5rem; }
+  .game p { margin: 0; color: var(--muted); flex: 1; }
+  .game .cta {
+    align-self: flex-start;
+    margin-top: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: .95rem;
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .game.iron .cta { background: var(--accent2); color: #fff; }
+  footer { margin-top: 48px; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Les jeux d'Antoine</h1>
+  <p>Choisis un jeu pour commencer à jouer</p>
+</header>
+
+<main>
+  <a class="game chess" href="echecs/index.html">
+    <div class="icon">♞</div>
+    <h2>Échecs</h2>
+    <p>Jeu d'échecs complet : bots, tournois, Chess960, apprentissage. Fonctionne aussi hors ligne.</p>
+    <span class="cta">Jouer aux échecs</span>
+  </a>
+
+  <a class="game iron" href="front-de-fer/front-de-fer.html">
+    <div class="icon">⚔️</div>
+    <h2>Front de Fer</h2>
+    <p>Jeu de stratégie au tour par tour : déploie tes unités et prends le contrôle de la carte.</p>
+    <span class="cta">Jouer à Front de Fer</span>
+  </a>
+</main>
+
+<footer>Jeux jouables directement dans le navigateur, sans installation.</footer>
+</body>
+</html>

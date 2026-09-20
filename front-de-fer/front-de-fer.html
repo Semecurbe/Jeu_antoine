@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+  /* socle : même base que la page publiée sur claude.ai */
+  html{color-scheme:dark}
+  :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  body{margin:0;font:14px system-ui,sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>Front de Fer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --ground:#151813; --panel:#1f241d; --panel2:#272d24; --line:#3a4235;
+    --ink:#e8e2d0; --ink-dim:#a49f8e; --paper:#d9cfae;
+    --blue:#4f8fd6; --blue-dk:#2c5a90; --red:#d1553f; --red-dk:#8a2f22;
+    --gold:#e0b34a; --ok:#7fb069; --warn:#e0b34a;
+    --f-display:"Oswald","Arial Narrow",Impact,sans-serif;
+    --f-mono:"IBM Plex Mono","SFMono-Regular",Menlo,monospace;
+  }
+  html,body{height:100%}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f-mono);font-size:13px;line-height:1.45}
+  *{box-sizing:border-box}
+  .wrap{max-width:1180px;margin:0 auto;padding-block:12px;padding-inline:16px;display:flex;flex-direction:column;gap:12px;min-height:100%}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:8px}
+  h1{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:.06em;text-transform:uppercase;margin:0;color:var(--paper);text-wrap:balance}
+  h1 small{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;color:var(--ink-dim);margin-left:10px;font-weight:400}
+  .status{display:flex;gap:18px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .status .k{color:var(--ink-dim);text-transform:uppercase;letter-spacing:.12em;font-size:10px;display:block}
+  .status .v{font-family:var(--f-display);font-size:22px;line-height:1;font-weight:500}
+  .v.blue{color:var(--blue)} .v.red{color:var(--red)} .v.gold{color:var(--gold)}
+  .sides{display:flex;gap:12px;flex-wrap:wrap}
+  .side{display:flex;flex-direction:column;gap:2px;padding-left:8px;border-left:3px solid var(--line);font-variant-numeric:tabular-nums;min-width:64px}
+  .side .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+  .side .v{font-family:var(--f-display);font-size:16px;line-height:1.1;font-weight:500}
+  .side.dead{opacity:.35;text-decoration:line-through}
+  .side.me .k::after{content:' · vous';color:var(--gold)}
+  .side.ready .v::after{content:' ✓';color:var(--ok)}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+  @media (max-width:820px){main{grid-template-columns:1fr}}
+  .board{position:relative;background:#0e100d;border:1px solid var(--line);padding:6px;box-shadow:0 0 0 4px #1a1e18,0 18px 40px rgba(0,0,0,.6)}
+  canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:manipulation;cursor:crosshair}
+  .view3d{width:100%;max-width:100%;touch-action:none;cursor:crosshair;position:relative}
+  .view3d canvas{cursor:inherit}
+  .viewbar{position:absolute;top:10px;right:10px;display:flex;gap:4px;z-index:2}
+  .viewbar button{width:auto;padding:4px 9px;font-size:12px;background:rgba(31,36,29,.85);backdrop-filter:blur(3px)}
+  .camhint{position:absolute;left:10px;bottom:8px;font-size:10px;color:var(--ink-dim);letter-spacing:.08em;text-transform:uppercase;pointer-events:none;z-index:2}
+  aside{display:flex;flex-direction:column;gap:10px}
+  .card{background:var(--panel);border:1px solid var(--line);padding:10px 12px}
+  .card h2{font-family:var(--f-display);font-size:13px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 8px;color:var(--ink-dim);font-weight:500}
+  .unitinfo{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-variant-numeric:tabular-nums}
+  .unitinfo dt{color:var(--ink-dim)} .unitinfo dd{margin:0}
+  .unitname{font-family:var(--f-display);font-size:20px;letter-spacing:.04em;margin-bottom:6px}
+  .empty{color:var(--ink-dim);font-style:italic}
+  button{font-family:var(--f-display);font-size:15px;letter-spacing:.1em;text-transform:uppercase;background:var(--panel2);color:var(--ink);border:1px solid var(--line);padding:9px 12px;cursor:pointer;width:100%;transition:background .12s}
+  button:hover{background:#333b2f} button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--blue-dk);border-color:var(--blue)} button.primary:hover{background:#3a6ea8}
+  .actions{display:flex;flex-direction:column;gap:6px}
+  .shop{display:grid;gap:6px}
+  .shop button{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+  .shop button span{font-family:var(--f-mono);font-size:12px;letter-spacing:0;text-transform:none;color:var(--gold)}
+  .log{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;font-size:12px}
+  .log div{padding-left:8px;border-left:2px solid var(--line)} .log .sB{border-color:#4f8fd6} .log .sR{border-color:#d1553f} .log .sG{border-color:#6fb35a} .log .sY{border-color:#e2b53c} .log .g{border-color:var(--gold)}
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;color:var(--ink-dim)}
+  .legend b{color:var(--ink);font-weight:600}
+  .overlay{position:absolute;inset:0;background:rgba(21,24,19,.86);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:20px}
+  .overlay h2{font-family:var(--f-display);font-size:44px;margin:0;letter-spacing:.08em;text-transform:uppercase}
+  .overlay p{margin:0;color:var(--ink-dim);max-width:40ch}
+  .overlay button{width:auto;padding-inline:26px}
+  .hint{font-size:11px;color:var(--ink-dim)}
+  .flash{position:absolute;inset:0;background:#fff6d0;opacity:0;pointer-events:none;z-index:3}
+  .flash.on{animation:nukeflash 2.4s ease-out forwards}
+  @keyframes nukeflash{0%{opacity:0}4%{opacity:1}30%{opacity:.6}100%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){.flash.on{animation:none}}
+  #dailyCard h2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .refresh{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:none;color:var(--gold)}
+  .offers{display:flex;flex-direction:column;gap:6px}
+  .offer{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);align-items:center}
+  .offer .n{font-family:var(--f-display);font-size:15px;letter-spacing:.04em;color:var(--paper)}
+  .offer .n .promo{font-size:10px;letter-spacing:.12em;color:var(--gold);border:1px solid var(--gold);padding:0 4px;margin-left:6px;vertical-align:middle}
+  .offer .d{grid-column:1;font-size:11px;color:var(--ink-dim)}
+  .offer .left{grid-column:1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim)}
+  .offer button{grid-column:2;grid-row:1/4;width:auto;padding:6px 10px;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:1px}
+  .offer button .price{font-family:var(--f-mono);font-size:12px;color:var(--gold);letter-spacing:0;text-transform:none}
+  .offer button .old{font-size:10px;color:var(--ink-dim);text-decoration:line-through}
+  .offer.sold{opacity:.5}
+  .strike-armed{outline:2px solid var(--gold)}
+  .field{display:flex;flex-direction:column;gap:3px}
+  .field label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+  select{font-family:var(--f-mono);font-size:13px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);padding:6px 8px;width:100%}
+  select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .netstatus{font-family:var(--f-display);font-size:16px;letter-spacing:.04em}
+  .netstatus .you{color:var(--gold)}
+  .lobby{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .lobby h4{margin:6px 0 0;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
+  .game{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--panel2);border:1px solid var(--line);font-size:12px}
+  .game .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .game .who b{color:var(--paper)}
+  .game button{width:auto;padding:4px 10px;font-size:12px}
+  .game .del{padding:4px 8px;color:var(--ink-dim)}
+  .pill{display:inline-block;padding:1px 6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);color:var(--ink-dim)}
+  .pill.wait{color:var(--gold);border-color:var(--gold)} .pill.play{color:var(--ok);border-color:var(--ok)}
+  .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:12px}
+  .steps b{color:var(--paper)}
+  .rules{position:fixed;inset:0;z-index:10;background:rgba(10,12,9,.8);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+  .rules-box{background:var(--panel);border:1px solid var(--line);box-shadow:0 0 0 4px #1a1e18,0 18px 40px rgba(0,0,0,.6);max-width:720px;width:100%;padding:18px 22px 22px;display:flex;flex-direction:column;gap:16px}
+  .rules-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid var(--line);padding-bottom:8px}
+  .rules-head h2{font-family:var(--f-display);font-size:26px;letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--paper)}
+  .rules-head button{width:auto;padding:6px 14px}
+  .rules h3{font-family:var(--f-display);font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 6px;font-weight:500}
+  .rules p{margin:0 0 6px;max-width:68ch}
+  .rules ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+  .rules ul li::marker{color:var(--gold)}
+  .tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12px}
+  .tbl th{text-align:left;font-weight:600;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.08em;font-size:10px;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:5px 8px;border-bottom:1px solid rgba(58,66,53,.5)}
+  .tbl td:first-child{color:var(--paper);font-weight:600}
+  .tblwrap{overflow-x:auto}
+  .sw{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.4)}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+  .btnrow button{width:auto;flex:1}
+  .rules-open{width:auto;padding:6px 14px;font-size:13px;align-self:center}
+  @media (prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Front de Fer <small id="mapName">Vallée de la Belette · 14×10</small></h1>
+    <div class="status">
+      <div><span class="k">Tour</span><span class="v" id="sTurn">1</span></div>
+      <div><span class="k">Prime de combat</span><span class="v gold" id="sBounty">60 or</span></div>
+      <div><span class="k">Ordres donnés</span><span class="v" id="sSide">0 / 2 prêts</span></div>
+      <div id="sSides" class="sides"></div>
+      <button class="rules-open" id="btnRules">Règles</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="board">
+      <div id="view3d" class="view3d"></div>
+      <canvas id="cv" width="1120" height="800" hidden></canvas>
+      <div class="viewbar">
+        <button id="btnView" title="Basculer 2D / 3D">Vue 2D</button>
+        <button id="btnCamL" title="Tourner la caméra">⟲</button>
+        <button id="btnCamR" title="Tourner la caméra">⟳</button>
+        <button id="btnCamReset" title="Recentrer">⌂</button>
+      </div>
+      <div class="camhint" id="camHint">Glisser : tourner · molette : zoom</div>
+      <div class="flash" id="flash"></div>
+      <div class="overlay" id="overlay" hidden>
+        <h2 id="ovTitle">Victoire</h2>
+        <p id="ovText"></p>
+        <button id="btnRestart">Nouvelle campagne</button>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card" id="netCard">
+        <h2>Partie</h2>
+        <div id="netStatus" class="netstatus">Solo contre l'ordinateur</div>
+        <div class="actions" id="netActions" style="margin-top:8px"></div>
+        <div id="lobby" class="lobby" hidden></div>
+        <p class="hint" id="netHint" style="margin:8px 0 0"></p>
+      </div>
+      <div class="card">
+        <h2>Campagne</h2>
+        <div class="field"><label for="selMap">Carte</label><select id="selMap"></select></div>
+        <p class="hint" id="mapDesc" style="margin:4px 0 8px"></p>
+        <div class="field"><label for="selPlayers">Camps</label><select id="selPlayers"><option value="2">2 camps — Bleus vs Rouges</option><option value="3">3 camps — + Verts</option><option value="4">4 camps — + Jaunes</option></select></div>
+        <p class="hint" style="margin:4px 0 8px">En solo, les autres camps sont joués par l'ordinateur et s'affrontent aussi entre eux. Dernier QG debout gagne.</p>
+        <div class="field"><label for="selDiff">Difficulté (solo)</label><select id="selDiff"></select></div>
+        <p class="hint" id="diffDesc" style="margin:4px 0 8px"></p>
+        <button id="btnNew">Nouvelle partie solo</button>
+      </div>
+      <div class="card">
+        <h2>Sélection</h2>
+        <div id="sel"><p class="empty">Cliquez sur une unité bleue.</p></div>
+      </div>
+      <div class="card">
+        <h2>Ordres</h2>
+        <div class="actions">
+          <button id="btnWait" disabled>Attendre</button>
+          <button id="btnEnd" class="primary">Fin du tour</button>
+        </div>
+        <p class="hint" id="hint">Sélectionnez une unité, déplacez-la, puis attaquez. Le QG recrute.</p>
+        <ol class="steps" style="margin-top:8px">
+          <li><b>Cliquez</b> une unité bleue.</li>
+          <li><b>Case bleue</b> : déplacement.</li>
+          <li><b>Cadre rouge</b> : attaque.</li>
+          <li><b>Fin du tour</b> quand vos ordres sont donnés — les autres camps jouent en même temps.</li>
+        </ol>
+      </div>
+      <div class="card" id="shopCard" hidden>
+        <h2>Recrutement au QG</h2>
+        <div class="shop" id="shop"></div>
+      </div>
+      <div class="card" id="dailyCard">
+        <h2>Boutique du jour <span class="refresh" id="shopRefresh"></span></h2>
+        <div class="offers" id="offers"></div>
+        <p class="hint" style="margin:8px 0 0">Trois offres, les mêmes pour tout le monde, renouvelées chaque jour à minuit UTC. Chaque offre est limitée à 2 achats par camp et par partie. Les unités achetées apparaissent à côté de votre QG.</p>
+      </div>
+      <div class="card">
+        <h2>Journal</h2>
+        <div class="log" id="log"></div>
+      </div>
+      <div class="card">
+        <h2>Objectif</h2>
+        <p style="margin:0">Détruire le <b>QG de chaque camp adverse</b>. Vous perdez si le vôtre tombe. Dernier QG debout gagne.</p>
+        <p class="hint" style="margin:6px 0 0">Prenez les villes avec l'infanterie : chacune rapporte +75 or par tour. Chaque attaque rapporte aussi une prime, d'autant plus grosse que peu d'unités sont mortes.</p>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="rules" id="rules" hidden>
+  <div class="rules-box" role="dialog" aria-labelledby="rulesTitle">
+    <div class="rules-head"><h2 id="rulesTitle">Règles du jeu</h2><button id="btnRulesClose">Fermer</button></div>
+
+    <section>
+      <h3>1 · But de la partie</h3>
+      <p>Deux armées s'affrontent sur une carte de 14 × 10 cases. Vous commandez les <b style="color:var(--blue)">Bleus</b> (en bas à gauche) contre les <b style="color:var(--red)">Rouges</b> (en haut à droite, joués par l'ordinateur).</p>
+      <ul>
+        <li><b>Victoire</b> : détruire le QG de chaque camp adverse — dernier QG debout gagne. Un camp dont le QG tombe est éliminé : ses unités disparaissent et ses villes redeviennent neutres.</li>
+        <li>Jusqu'à <b>4 camps</b> (Bleus, Rouges, Verts, Jaunes), tous actifs en même temps.</li>
+        <li><b>☢ Bombe atomique</b> : dans une partie à 3 ou 4 camps, quand il ne reste plus que <b>deux camps</b> en vie, une bombe s'abat sur le secteur : <b>toutes les unités, QG compris, sont laissées à 1 PV</b>. Une seule fois par partie. Après la bombe, le <b>Kit de réparation</b> de la boutique est interdit (retombées) : seuls les soins en ville ou au QG restent possibles. Le duel final se joue sur le fil.</li>
+        <li><b>Défaite</b> : votre QG est détruit.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>2 · Un tour, pas à pas</h3>
+      <p><b>Tous les camps jouent en même temps.</b> Chacun donne ses ordres pendant le même tour ; les actions s'appliquent immédiatement, dans l'ordre où elles sont données. Quand un camp a fini, il clique « Fin du tour » ; dès que tous les camps survivants sont prêts, le tour se résout et le suivant commence.</p>
+      <ul>
+        <li>Au début de chaque tour, chaque camp reçoit de l'or : <b>100 + 75 par ville</b> qu'il contrôle (QG inclus).</li>
+        <li>Chaque unité peut, dans cet ordre : <b>se déplacer</b> puis <b>attaquer</b>. Attaquer termine son action. Une unité peut aussi attaquer sans bouger, ou seulement bouger.</li>
+        <li>Une unité qui a fini apparaît grisée. « Attendre » termine volontairement l'action d'une unité.</li>
+        <li>Cliquez sur votre <b>QG</b> pour recruter : la nouvelle unité apparaît sur une case libre à côté et ne peut agir qu'au tour suivant.</li>
+        <li>En solo, les camps de l'ordinateur bougent pendant que vous réfléchissez ; « Fin du tour » leur fait terminer leurs ordres immédiatement.</li>
+        <li>Les unités posées sur une ville amie ou sur leur QG récupèrent <b>+2 PV</b> au début de leur tour.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>3 · Les unités</h3>
+      <div class="tblwrap"><table class="tbl">
+        <tr><th>Unité</th><th>Coût</th><th>PV</th><th>Mouv.</th><th>Attaque</th><th>Défense</th><th>Portée</th><th>Particularité</th></tr>
+        <tr><td>Infanterie</td><td>100</td><td>10</td><td>3</td><td>3</td><td>2</td><td>1</td><td>Seule unité qui capture les villes</td></tr>
+        <tr><td>Char</td><td>300</td><td>10</td><td>5</td><td>5</td><td>4</td><td>1</td><td>Forêt coûte 3, rivière infranchissable</td></tr>
+        <tr><td>Artillerie</td><td>250</td><td>10</td><td>2</td><td>6</td><td>1</td><td>2 à 3</td><td>Ne peut pas bouger et tirer le même tour ; ne riposte jamais ; ne peut pas tirer sur une case adjacente</td></tr>
+        <tr><td>QG</td><td>—</td><td>20</td><td>0</td><td>1</td><td>3</td><td>1</td><td>Immobile ; recrute ; sa perte fait perdre la partie</td></tr>
+      </table></div>
+    </section>
+
+    <section>
+      <h3>4 · Le terrain</h3>
+      <p>Chaque unité dispose de points de mouvement ; entrer sur une case coûte son prix. La défense du terrain s'ajoute à celle de l'unité qui s'y trouve.</p>
+      <div class="tblwrap"><table class="tbl">
+        <tr><th>Case</th><th>Coût de mouvement</th><th>Défense</th><th>Note</th></tr>
+        <tr><td><span class="sw" style="background:#5c6b3d"></span>Plaine</td><td>1</td><td>0</td><td>Terrain ouvert, rapide mais exposé</td></tr>
+        <tr><td><span class="sw" style="background:#3b5230"></span>Forêt</td><td>2 (char : 3)</td><td>+1</td><td>Bon abri pour l'infanterie</td></tr>
+        <tr><td><span class="sw" style="background:#7d6d45"></span>Colline</td><td>2</td><td>+2</td><td>Meilleure position défensive</td></tr>
+        <tr><td><span class="sw" style="background:#6c6862"></span>Ville</td><td>1</td><td>+2</td><td>Rapporte +75 or/tour, soigne +2 PV</td></tr>
+        <tr><td><span class="sw" style="background:#32566b"></span>Rivière</td><td>3 (char : interdit)</td><td>−1</td><td>Lent et dangereux</td></tr>
+        <tr><td><span class="sw" style="background:#8a6a3f"></span>Pont</td><td>1</td><td>0</td><td>Seul passage pour les chars</td></tr>
+        <tr><td><span class="sw" style="background:#d6c186"></span>Plage</td><td>1 (char : 2)</td><td>−1</td><td>Rapide mais à découvert ; les chars s'enlisent</td></tr>
+        <tr><td><span class="sw" style="background:#c4a765"></span>Dune</td><td>2</td><td>+1</td><td>Surplombe la plage</td></tr>
+        <tr><td><span class="sw" style="background:#1f4f78"></span>Mer</td><td>infranchissable</td><td>—</td><td>Personne n'y entre</td></tr>
+      </table></div>
+    </section>
+
+    <section>
+      <h3>5 · Le combat</h3>
+      <ul>
+        <li><b>Prime de combat</b> : chaque attaque rapporte de l'or à l'attaquant, qu'elle tue ou non. La prime commence à <b>60 or</b> et perd <b>6 or par unité détruite</b> depuis le début de la partie, tous camps confondus (minimum 10). Plus la guerre est meurtrière, moins elle paie ; une bataille sans pertes rapporte le maximum. La prime en cours est affichée dans l'en-tête.</li>
+        <li><b>Dégâts</b> ≈ 1,5 × (attaque − ½ × (défense de l'unité + défense du terrain)), réduits proportionnellement aux PV restants de l'attaquant, avec un petit aléa. Toujours au moins 1.</li>
+        <li>Exemples sur une plaine : infanterie → infanterie : 3 · char → infanterie : 6 · infanterie → char : 1 à 2 · artillerie → char : 6.</li>
+        <li><b>Riposte</b> : si le défenseur survit et que l'attaquant est à sa portée, il rend immédiatement les coups. L'artillerie ne riposte jamais et, tirant de loin, n'est jamais ripostée.</li>
+        <li>Une unité blessée frappe moins fort : 5 PV sur 10 = moitié des dégâts.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>6 · Villes et capture</h3>
+      <ul>
+        <li>Quatre villes neutres : (11,0), (2,2), (10,7), (2,9). Les QG comptent aussi comme villes.</li>
+        <li>Une <b>infanterie</b> qui se trouve sur une ville non alliée à la résolution du tour la capture.</li>
+        <li>Plus de villes = plus d'or = plus d'unités. Contrôler le centre de la carte décide souvent de la partie.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>7 · La boutique du jour</h3>
+      <ul>
+        <li>Chaque jour (minuit UTC), la boutique propose <b>3 offres</b> tirées d'un catalogue de 8, identiques pour tous les joueurs ; l'une d'elles est à <b>−20 %</b>.</li>
+        <li>Catalogue : Char lourd (14 PV, att. 6, déf. 5), Commando (inf. mouv. 4, att. 4), Obusier (portée 2 à 4, att. 7), Éclaireur (mouv. 6, 8 PV), Kit de réparation (+4 PV à toutes vos unités ; interdit après la bombe atomique), Fortifications (QG +2 déf.), Frappe aérienne (5 dégâts n'importe où, à viser sur la carte), Levée de fonds (+25 or par ville et par tour).</li>
+        <li>Chaque offre est limitée à <b>2 achats par camp et par partie</b>. Les unités achetées apparaissent près du QG et jouent au tour suivant ; elles portent une étoile ★.</li>
+      </ul>
+    </section>
+
+    <div class="btnrow"><button id="btnRulesClose2" class="primary">Compris, au combat</button></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const MAPS = {
+  vallee:{ name:'Vallée de la Belette', w:14, h:10, desc:'Rivière au centre, deux ponts. Équilibrée.',
+    rows:["HHPPFFPPPPPCPP","HPPPFPPPPPPPPP","PPCPPPRRPPPFFP","PPPPFPPRPPPHFP","FPPPPPBBPPPPPP","PPPPPPRRPPPPPF","PFHPPPRPPPFPPP","PFFPPPBBPPCPPP","PPPPPPPPPFPPPH","PPCPPPPPPFFPHH"],
+    units:{ B:[['hq',1,8],['inf',2,8],['inf',1,7],['tank',2,7],['art',0,9]], R:[['hq',12,1],['inf',11,1],['inf',12,2],['tank',11,2],['art',13,0]], G:[['hq',12,8],['inf',11,8],['inf',12,9],['tank',11,9],['art',13,9]], Y:[['hq',1,1],['inf',2,1],['inf',1,2],['tank',2,0],['art',0,0]] } },
+  rives:{ name:'Les Deux Rives', w:16, h:10, desc:'Large fleuve, trois ponts à tenir. Les chars y sont vulnérables.',
+    rows:["PPFFPPPRRPPPFHHP","PHPPPPPRRPPPPPPP","PPPCPPPBBPPPCPPP","PPPPFPPRRPPFPPPP","FPPPPPPRRPPPPPHP","PHPPPPPBBPPPPPPF","PPPPFPPRRPPFPPPP","PPPCPPPBBPPPCPPP","PPPPPPPRRPPPPPHP","PHHFPPPRRPPPFFPP"],
+    units:{ B:[['hq',1,8],['inf',2,8],['inf',1,7],['tank',2,7],['art',0,9]], R:[['hq',14,1],['inf',13,1],['inf',14,2],['tank',13,2],['art',15,0]], G:[['hq',14,8],['inf',13,8],['inf',14,9],['tank',13,9],['art',15,9]], Y:[['hq',1,1],['inf',2,1],['inf',1,2],['tank',2,2],['art',0,0]] } },
+  col:{ name:'Col du Fer', w:12, h:12, desc:'Une crête de collines en diagonale. Lente, défensive, favorable à l\'artillerie.',
+    rows:["PPPFFHHPPPPP","PPPFHHHFPPPP","PCPPPHHFFPPP","PPPPPPHHFPCP","FPPPPPPHHPPP","FFPPCPPPHHPP","PPHHPPPCPPFF","PPPHHPPPPPPF","PCPFHHPPPPPP","PPPFFHHPPPCP","PPPPFHHHFPPP","PPPPPHHFFPPP"],
+    units:{ B:[['hq',1,10],['inf',2,10],['inf',1,9],['tank',2,9],['art',0,11]], R:[['hq',10,1],['inf',9,1],['inf',10,2],['tank',9,2],['art',11,0]], G:[['hq',10,10],['inf',9,10],['inf',10,11],['tank',11,10],['art',11,11]], Y:[['hq',1,1],['inf',2,1],['inf',0,1],['tank',2,2],['art',0,0]] } },
+  plaine:{ name:'Plaine ouverte', w:16, h:8, desc:'Peu d\'obstacles, huit villes. Course à l\'or et batailles de chars.',
+    rows:["PPPCPPPPPPPPCPPP","PPPPPPFPPFPPPPPP","PCPPPPPPPPPPPPCP","PPPPPFPCPPFPPPPP","PPPPPFPPCPFPPPPP","PCPPPPPPPPPPPPCP","PPPPPPFPPFPPPPPP","PPPCPPPPPPPPCPPP"],
+    units:{ B:[['hq',1,6],['inf',2,6],['inf',0,7],['tank',2,7],['art',0,5]], R:[['hq',14,1],['inf',13,1],['inf',15,0],['tank',13,0],['art',15,2]], G:[['hq',14,6],['inf',13,6],['inf',15,7],['tank',13,7],['art',15,5]], Y:[['hq',1,1],['inf',2,1],['inf',0,0],['tank',2,0],['art',0,2]] } },
+  croisee:{ name:'La Grande Croisée', w:20, h:16, big:true, desc:'Grande carte pour 3 ou 4 camps : deux fleuves en croix, quatre ponts et un carrefour de villes au centre. Douze villes.',
+    rows:["PPPFFPPPPRRPPPPPFFPP","PPPPFPPPPRRPPPPPFPPP","PCPPPPPHPRRPHPPPPPCP","PPPPPPPHPBBPHPPPPPPP","PPFPPPPPPRRPPPPPPFPP","PPFFPPCPPRRPPCPPFFPP","PPPPPPPPPBBPPPPPPPPP","RRRRBRRRRCCRRRRBRRRR","RRRRBRRRRCCRRRRBRRRR","PPPPPPPPPBBPPPPPPPPP","PPFFPPCPPRRPPCPPFFPP","PPFPPPPPPRRPPPPPPFPP","PPPPPPPHPBBPHPPPPPPP","PCPPPPPHPRRPHPPPPPCP","PPPPFPPPPRRPPPPPFPPP","PPPFFPPPPRRPPPPPFFPP"],
+    units:{ B:[['hq',1,14],['inf',2,14],['inf',1,15],['tank',2,13],['art',0,15]], R:[['hq',18,1],['inf',17,1],['inf',18,0],['tank',17,2],['art',19,0]], G:[['hq',18,14],['inf',17,14],['inf',18,15],['tank',17,13],['art',19,15]], Y:[['hq',1,1],['inf',2,1],['inf',1,0],['tank',2,2],['art',0,0]] } },
+  plage:{ name:'Baie des Sables', w:18, h:12, desc:'Une baie infranchissable au centre, une longue plage tout autour : rapide mais à découvert (défense −1), et des dunes en surplomb. Les chars s\'enlisent dans le sable.',
+    rows:["PPFPPSSMMMMMMSSPPF","PPPPSSMMMMMMMMSSPP","PCPSSMMMMMMMMMMSSC","PPSSMMMMMMMMMMMMSS","PDSSSMMMMMMMMMSSSD","PDDSSSSSMMSSSSSSDD","PPDDCSSSSSSSSSCDDP","PPPDDDSSSSSSDDDPPP","PPCPPDDDSSDDDPPCPP","PPPPPPPDDDDPPPPPPP","PFPPPPPPCPPPPPPPFP","PPFPPPPPPPPPPPPFPP"],
+    units:{ B:[['hq',1,11],['inf',2,11],['inf',0,10],['tank',1,10],['art',0,11]], R:[['hq',16,0],['inf',15,0],['inf',17,1],['tank',16,1],['art',17,0]], G:[['hq',16,11],['inf',15,11],['inf',17,10],['tank',16,10],['art',17,11]], Y:[['hq',1,0],['inf',2,0],['inf',0,1],['tank',1,1],['art',0,0]] } },
+};
+const DIFF = {
+  facile:  { name:'Recrue',   goldMul:0.6, startGold:100, dmgMul:0.8,  extra:[], hint:'L\'IA a moins d\'or et frappe moins fort.' },
+  normal:  { name:'Soldat',   goldMul:1,   startGold:200, dmgMul:1,    extra:[], hint:'Conditions égales.' },
+  difficile:{ name:'Vétéran', goldMul:1.4, startGold:400, dmgMul:1,    extra:[], hint:'L\'IA gagne 40 % d\'or en plus et commence riche.' },
+  general: { name:'Général',  goldMul:1.8, startGold:600, dmgMul:1.15, extra:['tank'], hint:'L\'IA a presque le double d\'or, un char de plus et des tirs plus puissants.' },
+};
+let W = 14, H = 10, MAP = MAPS.vallee.rows, mapId = 'vallee', diffId = 'normal', nPlayers = 2;
+function loadMap(id){
+  const m = MAPS[id] || MAPS.vallee; mapId = MAPS[id] ? id : 'vallee';
+  W=m.w; H=m.h; MAP=m.rows;
+  cv.width=W*T; cv.height=H*T; terrainCv.width=W*T; terrainCv.height=H*T; terrainReady=false;
+  if (V3) { V3.mapKey=null; resize3d(); }
+  document.getElementById('mapName').textContent = m.name + ' · ' + W + '×' + H;
+}
+const isSoloAI = () => !online.active;
+
+const TERRAIN = {
+  P:{name:'Plaine',   cost:1, def:0,  color:'#5c6b3d'},
+  F:{name:'Forêt',    cost:2, def:1,  color:'#3b5230'},
+  H:{name:'Colline',  cost:2, def:2,  color:'#7d6d45'},
+  C:{name:'Ville',    cost:1, def:2,  color:'#6c6862'},
+  R:{name:'Rivière',  cost:3, def:-1, color:'#32566b'},
+  B:{name:'Pont',     cost:1, def:0,  color:'#4a6474'},
+  S:{name:'Plage',    cost:1, def:-1, color:'#d6c186'},
+  D:{name:'Dune',     cost:2, def:1,  color:'#c4a765'},
+  M:{name:'Mer',      cost:99, def:0, color:'#1f4f78', blocked:true},
+};
+const TYPES = {
+  inf: {name:'Infanterie', mv:3, atk:3, def:2, min:1, max:1, hp:10, cost:100, capture:true},
+  tank:{name:'Char',       mv:5, atk:5, def:4, min:1, max:1, hp:10, cost:300},
+  art: {name:'Artillerie', mv:2, atk:6, def:1, min:2, max:3, hp:10, cost:250, indirect:true},
+  hq:  {name:'Quartier général', mv:0, atk:1, def:3, min:1, max:1, hp:20, cost:0, fixed:true},
+  // shop-only units
+  heavy:   {name:'Char lourd', family:'tank', mv:4, atk:6, def:5, min:1, max:1, hp:14, cost:450, shop:true},
+  commando:{name:'Commando',   family:'inf',  mv:4, atk:4, def:2, min:1, max:1, hp:10, cost:180, capture:true, shop:true},
+  howitzer:{name:'Obusier',    family:'art',  mv:1, atk:7, def:1, min:2, max:4, hp:10, cost:400, indirect:true, shop:true},
+  scout:   {name:'Éclaireur',  family:'inf',  mv:6, atk:2, def:1, min:1, max:1, hp:8,  cost:120, capture:true, shop:true},
+};
+const fam = u => TYPES[u.type].family || u.type;
+// ---- daily shop: the same three offers for everyone on a given UTC day
+const SHOP_POOL = [
+  {id:'heavy',    kind:'unit', type:'heavy',    name:'Char lourd',        price:450, desc:'14 PV, attaque 6, défense 5, mouvement 4.'},
+  {id:'commando', kind:'unit', type:'commando', name:'Commando',          price:180, desc:'Infanterie d\'élite : mouvement 4, attaque 4. Capture les villes.'},
+  {id:'howitzer', kind:'unit', type:'howitzer', name:'Obusier',           price:400, desc:'Artillerie lourde : portée 2 à 4, attaque 7, mouvement 1.'},
+  {id:'scout',    kind:'unit', type:'scout',    name:'Éclaireur',         price:120, desc:'Mouvement 6 mais 8 PV et défense 1. Capture les villes.'},
+  {id:'repair',   kind:'repair',  name:'Kit de réparation', price:150, desc:'Toutes vos unités récupèrent 4 PV immédiatement.'},
+  {id:'fortify',  kind:'fortify', name:'Fortifications',    price:200, desc:'Votre QG gagne +2 en défense pour toute la partie.'},
+  {id:'strike',   kind:'strike',  name:'Frappe aérienne',   price:250, desc:'5 dégâts sur une unité ennemie de votre choix, où qu\'elle soit.'},
+  {id:'bounty',   kind:'bounty',  name:'Levée de fonds',    price:300, desc:'Chacune de vos villes rapporte +25 or par tour jusqu\'à la fin.'},
+];
+const SHOP_LIMIT = 2;   // purchases of one offer per camp per game
+let todayOverride=null;
+const dayKey = (d=new Date()) => todayOverride || d.toISOString().slice(0,10);
+function seededRandom(str){ let h=2166136261; for (const ch of str){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return () => { h += 0x6D2B79F5; let t = Math.imul(h ^ (h>>>15), 1|h); t ^= t + Math.imul(t ^ (t>>>7), 61|t); return ((t ^ (t>>>14))>>>0)/4294967296; }; }
+function shopOffers(day){
+  const rnd = seededRandom('front-de-fer:'+day), pool=[...SHOP_POOL], out=[];
+  while (out.length<3 && pool.length) out.push(pool.splice(Math.floor(rnd()*pool.length),1)[0]);
+  const promo = Math.floor(rnd()*out.length);
+  return out.map((o,i)=>({ ...o, day, promo:i===promo, cost: i===promo ? Math.round(o.price*0.8/10)*10 : o.price }));
+}
+function nextRefreshMs(){ const n=new Date(); return Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+1) - n.getTime(); }
+const SIDE = {
+  B:{name:'Bleus',  adj:'bleue',  color:'#4f8fd6', dark:'#2c5a90', wall:'#3c5f8f'},
+  R:{name:'Rouges', adj:'rouge',  color:'#d1553f', dark:'#8a2f22', wall:'#8f3b2c'},
+  G:{name:'Verts',  adj:'verte',  color:'#6fb35a', dark:'#3c6e2e', wall:'#4a7a3a'},
+  Y:{name:'Jaunes', adj:'jaune',  color:'#e2b53c', dark:'#8f6d16', wall:'#9a7a25'},
+};
+const ORDER = ['B','R','G','Y'];
+const alive = side => S.units.some(u=>u.side===side && u.type==='hq');
+const isAI = side => isSoloAI() && side!==humanSide;
+// online session (filled by initOnline)
+const online = { db:null, user:undefined, me:null, active:false, side:null, gameId:null, ref:null, unsub:null, lobbyUnsub:null, meta:null, games:[] };
+let humanSide = 'B';
+const my = () => online.active ? online.side : humanSide;        // the side this viewer commands
+const myTurn = () => !S.over && !S.busy && !committing && my() && alive(my()) && !S.ready?.[my()] && !(online.active && online.meta && online.meta.status==='waiting');
+
+let S; // game state
+let uid = 1;
+function mk(type, side, x, y){ return {id:uid++, type, side, x, y, hp:TYPES[type].hp, moved:false, acted:false}; }
+function newGame(){
+  uid = 1;
+  loadMap(mapId);
+  const m = MAPS[mapId], d = DIFF[diffId];
+  const cities = {};
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++) if (MAP[y][x]==='C') cities[key(x,y)]='N';
+  const units = [];
+  const sides = ORDER.slice(0, Math.max(2, Math.min(4, nPlayers)));
+  for (const side of sides) for (const [t,x,y] of m.units[side]){ units.push(mk(t,side,x,y)); if (t==='hq') cities[key(x,y)]=side; }
+  const gold = {};
+  for (const side of sides){
+    gold[side] = isAI(side) ? d.startGold : 200;
+    if (isAI(side)) for (const t of d.extra){ const hq=m.units[side][0]; for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]){ const x=hq[1]+dx,y=hq[2]+dy; if (inb(x,y) && !units.some(u=>u.x===x&&u.y===y) && MAP[y][x]!=='R'){ units.push(mk(t,side,x,y)); break; } } }
+  }
+  S = {
+    turn:1, side:'B', sides, gold, ready:{}, over:null, busy:false, shop:{day:dayKey(), bought:{}}, bonus:{}, strike:{}, deaths:0, nuked:false,
+    cities, units, mapId, diffId: isSoloAI()? diffId : null,
+    sel:null, reach:null, targets:null, log:[], rev:0,
+  };
+  log(`${m.name} — ${sides.length} camps — ${isSoloAI() ? 'difficulté '+d.name : 'partie en ligne'}.`,'g');
+  log('Le front s\'ouvre. Les Bleus ont l\'initiative.','g');
+  render(); ui();
+}
+
+// ---------- helpers ----------
+const key = (x,y) => x+','+y;
+const tile = (x,y) => MAP[y][x];
+const tdef = (x,y) => TERRAIN[tile(x,y)].def;
+const inb = (x,y) => x>=0 && y>=0 && x<W && y<H;
+const unitAt = (x,y) => S.units.find(u => u.x===x && u.y===y);
+const dist = (a,b) => Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+function moveCost(u, x, y){
+  const t = tile(x,y);
+  if (TERRAIN[t].blocked) return Infinity;
+  if (u.type==='tank'){ if (t==='R') return Infinity; if (t==='F') return 3; if (t==='S') return 2; }
+  return TERRAIN[t].cost;
+}
+function reachable(u){
+  const mv = TYPES[u.type].mv, best = {[key(u.x,u.y)]:0}, q=[[u.x,u.y,0]];
+  while(q.length){
+    q.sort((a,b)=>a[2]-b[2]); const [x,y,c] = q.shift();
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+      const occ = unitAt(nx,ny); if (occ && occ.side!==u.side) continue;
+      const nc = c + moveCost(u,nx,ny); if (nc>mv) continue;
+      const k = key(nx,ny); if (best[k]!==undefined && best[k]<=nc) continue;
+      best[k]=nc; q.push([nx,ny,nc]);
+    }
+  }
+  const out = new Set();
+  for (const k in best){ const [x,y]=k.split(',').map(Number); const occ=unitAt(x,y); if(!occ || occ===u) out.add(k); }
+  return out;
+}
+function targetsFrom(u, x, y){
+  const t = TYPES[u.type];
+  return S.units.filter(e => e.side!==u.side && (()=>{const d=Math.abs(e.x-x)+Math.abs(e.y-y); return d>=t.min && d<=t.max;})());
+}
+function canAttack(u){ return !u.acted && !(TYPES[u.type].indirect && u.moved) && !TYPES[u.type].fixed; }
+function dmgCalc(a, d, rnd){
+  const ta=TYPES[a.type], td=TYPES[d.type];
+  const bonusDef = d.type==='hq' ? (S.bonus?.[d.side]?.hqDef||0) : 0;
+  let base = 1.5*(ta.atk - 0.5*(td.def + bonusDef + tdef(d.x,d.y))) * (a.hp/ta.hp);
+  if (isAI(a.side)) base *= DIFF[S.diffId||'normal'].dmgMul;
+  return Math.max(1, Math.round(base + rnd*1.5 - 0.5));
+}
+function log(msg, cls){ S.log.unshift({msg,cls}); if(S.log.length>60) S.log.pop(); }
+
+// ---------- actions ----------
+function doMove(u, x, y){ u.x=x; u.y=y; u.moved=true; }
+// Prime de combat : chaque attaque rapporte de l'or à l'attaquant. Elle fond avec le nombre total
+// d'unités détruites depuis le début de la partie (tous camps confondus) — une guerre propre paie mieux.
+const BOUNTY_BASE = 60, BOUNTY_PER_DEATH = 6, BOUNTY_MIN = 10;
+const bounty = () => Math.max(BOUNTY_MIN, BOUNTY_BASE - BOUNTY_PER_DEATH * (S.deaths||0));
+function doAttack(a, d){
+  const prime = bounty();
+  const dmg = dmgCalc(a,d,Math.random()); d.hp -= dmg; addFx('hit',d.x,d.y); addFx('text',d.x,d.y,{txt:'−'+dmg,color:'#ffd27a'});
+  const sa = 's'+a.side;
+  log(`${TYPES[a.type].name} ${SIDE[a.side].name.toLowerCase()} frappe ${TYPES[d.type].name.toLowerCase()} (${d.x},${d.y}) : −${dmg}`, sa);
+  a.acted=true; a.moved=true;
+  S.gold[a.side] = (S.gold[a.side]||0) + prime; addFx('text',a.x,a.y,{txt:'+'+prime+' or',color:'#e0b34a'});
+  if (d.hp<=0){ kill(d); return; }
+  const td=TYPES[d.type], dd=dist(a,d);
+  if (!td.indirect && !td.fixed && dd>=td.min && dd<=td.max){
+    const c = dmgCalc(d,a,Math.random()); a.hp -= c; addFx('hit',a.x,a.y); addFx('text',a.x,a.y,{txt:'−'+c,color:'#ffb0a0'});
+    log(`Riposte : −${c} sur ${TYPES[a.type].name.toLowerCase()}`, 's'+d.side);
+    if (a.hp<=0) kill(a);
+  }
+}
+function kill(u){
+  S.units = S.units.filter(x=>x!==u); addFx('boom',u.x,u.y); S.deaths=(S.deaths||0)+1;
+  log(`${TYPES[u.type].name} ${SIDE[u.side].name.toLowerCase()} détruit${u.type==='art'?'e':''}.`, 's'+u.side);
+  if (u.type==='hq') eliminate(u.side);
+}
+function eliminate(side){
+  for (const v of S.units.filter(v=>v.side===side)) addFx('boom',v.x,v.y);
+  S.units = S.units.filter(v=>v.side!==side);
+  for (const k in S.cities) if (S.cities[k]===side) S.cities[k]='N';
+  terrainReady=false;
+  log(`Les ${SIDE[side].name} sont éliminés : leur QG est tombé.`,'g');
+  const left = S.sides.filter(alive);
+  if (left.length===1) endGame(left[0], 'Le dernier quartier général ennemi est tombé.');
+  else if (side===my()) endGame(null, 'Votre quartier général est tombé.');
+  if (left.length===2 && S.sides.length>=3 && !S.nuked) nuke();
+}
+// Quand une mêlée à 3 ou 4 camps se réduit à deux survivants, une bombe atomique s'abat sur le secteur :
+// toutes les unités encore debout, QG compris, sont laissées à 1 PV. Une seule fois par partie.
+function nuke(){
+  S.nuked = true;
+  for (const u of S.units) u.hp = 1;
+  addFx('nuke', Math.floor(W/2), Math.floor(H/2));
+  log('☢ BOMBE ATOMIQUE — il ne reste que deux camps : toutes les unités sont réduites à 1 PV. Les kits de réparation sont désormais interdits.','g');
+  const fl=document.getElementById('flash'); if (fl){ fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on'); }
+}
+function endGame(winner, why){
+  S.over = winner || 'none'; S.sel=null;
+  const ov=document.getElementById('overlay');
+  const won = winner===my();
+  document.getElementById('ovTitle').textContent = won ? 'Victoire' : 'Défaite';
+  document.getElementById('ovTitle').style.color = won ? 'var(--blue)' : 'var(--red)';
+  document.getElementById('ovText').textContent = why + ' ' + (won ? 'Le secteur est sécurisé, tour '+S.turn+'.' : winner ? 'Les '+SIDE[winner].name+' tiennent le secteur.' : 'Les camps restants se disputent le secteur.');
+  ov.hidden=false;
+}
+// ---------- simultaneous turns ----------
+// Every camp acts during the same turn. A camp that has finished declares itself ready;
+// when every surviving camp is ready, the turn resolves (captures, income, healing) and a new one begins.
+function readyUp(side){
+  if (S.over || S.ready[side] || !alive(side)) return;
+  S.ready[side]=true;
+  log(`Les ${SIDE[side].name} ont terminé leurs ordres.`, 's'+side);
+  checkAdvance();
+}
+function checkAdvance(){
+  const live = S.sides.filter(alive);
+  if (live.length && live.every(sd=>S.ready[sd])) advanceTurn();
+}
+function advanceTurn(){
+  // captures: infantry standing on a city it does not own
+  for (const u of S.units) if (TYPES[u.type].capture){
+    const k=key(u.x,u.y);
+    if (S.cities[k]!==undefined && S.cities[k]!==u.side){
+      S.cities[k]=u.side; terrainReady=false; log(`Ville (${u.x},${u.y}) capturée par les ${SIDE[u.side].name}.`, 's'+u.side);
+    }
+  }
+  S.turn++;
+  S.ready={};
+  for (const sd of S.sides.filter(alive)){
+    let inc = 100 + 75*Object.values(S.cities).filter(c=>c===sd).length;
+    if (isAI(sd)) inc = Math.round(inc * DIFF[S.diffId||'normal'].goldMul);
+    inc += (S.bonus?.[sd]?.income||0) * Object.values(S.cities).filter(c=>c===sd).length;
+    S.gold[sd]+=inc;
+  }
+  for (const u of S.units){ u.moved=false; u.acted=false; if(u.type==='hq' || S.cities[key(u.x,u.y)]===u.side) u.hp=Math.min(TYPES[u.type].hp,u.hp+2); }
+  log(`— Tour ${S.turn} : tous les camps reçoivent leurs revenus —`,'g');
+  S.sel=null; S.reach=null; S.targets=null;
+}
+function endTurn(){
+  if (!myTurn()) return;
+  S.sel=null; S.reach=null; S.targets=null;
+  commit({t:'ready', side:my()});
+}
+function recruit(type, side){
+  const hq = S.units.find(u=>u.type==='hq' && u.side===side); if(!hq) return false;
+  const cost = TYPES[type].cost; if (S.gold[side]<cost) return false;
+  for (const [dx,dy] of [[0,-1],[1,0],[-1,0],[0,1],[1,1],[-1,-1],[1,-1],[-1,1]]){
+    const x=hq.x+dx,y=hq.y+dy;
+    if (inb(x,y) && !unitAt(x,y) && moveCost({type},x,y)!==Infinity){
+      const u=mk(type,side,x,y); u.moved=true; u.acted=true; S.units.push(u); S.gold[side]-=cost;
+      log(`${TYPES[type].name} recruté${type==='art'?'e':''} en (${x},${y}).`, 's'+side);
+      return true;
+    }
+  }
+  return false;
+}
+
+// ---------- AI ----------
+// AI camps play alongside the human: one unit action per tick while the turn is open.
+const AI_ORDER = {art:0, tank:1, inf:2, hq:3};
+function aiUnitAct(u){
+  const me=u.side, t=TYPES[u.type];
+  const reach = reachable(u);
+  let best=null;
+  const spots = t.indirect ? [key(u.x,u.y)] : [...reach];
+  for (const k of spots){
+    const [x,y]=k.split(',').map(Number);
+    for (const e of targetsFrom(u,x,y)){
+      const from={...u,x,y};
+      const d = dmgCalc(from,e,0.5);
+      let score = d*2 + (e.hp-d<=0 ? 15 : 0) + (e.type==='hq'?12:0) + (e.type==='art'?4:0) + tdef(x,y)*1.5;
+      const te=TYPES[e.type], dd=Math.abs(e.x-x)+Math.abs(e.y-y);
+      if (!te.indirect && !te.fixed && e.hp-d>0 && dd>=te.min && dd<=te.max) score -= dmgCalc({...e,hp:e.hp-d},from,0.5)*1.5;
+      if (!best || score>best.score) best={score,x,y,e};
+    }
+  }
+  if (best && best.score>0){
+    if (best.x!==u.x||best.y!==u.y) doMove(u,best.x,best.y);
+    doAttack(u,best.e); return;
+  }
+  const foes = S.units.filter(v=>v.side!==me);
+  let goals=[];
+  if (u.type==='inf') goals = Object.keys(S.cities).filter(k=>S.cities[k]!==me).map(k=>{const [x,y]=k.split(',').map(Number);return {x,y};});
+  if (!goals.length) goals = foes.map(f=>({x:f.x,y:f.y}));
+  if (goals.length){
+    let pick=null;
+    for (const k of reach){
+      const [x,y]=k.split(',').map(Number);
+      const g = Math.min(...goals.map(gl=>Math.abs(gl.x-x)+Math.abs(gl.y-y)));
+      const nearestFoe = foes.length ? Math.min(...foes.map(f=>Math.abs(f.x-x)+Math.abs(f.y-y))) : 9;
+      let sc = -g*3 + tdef(x,y)*1.2;
+      if (u.type==='art') sc = -Math.abs(nearestFoe-3)*4 + tdef(x,y);
+      if (u.type!=='tank' && u.hp<5 && nearestFoe<=2) sc -= 6;
+      if (!pick || sc>pick.sc) pick={sc,x,y};
+    }
+    if (pick && (pick.x!==u.x||pick.y!==u.y)) doMove(u,pick.x,pick.y);
+  }
+  if (canAttack(u)){
+    const ts = targetsFrom(u,u.x,u.y);
+    if (ts.length){ ts.sort((a,b)=>a.hp-b.hp); doAttack(u,ts[0]); }
+  }
+  u.acted=true; u.moved=true;
+}
+function aiRecruit(me){
+  const nFoe = S.units.filter(u=>u.side!==me).length, nMe=S.units.filter(u=>u.side===me).length;
+  let guard=0;
+  while (S.gold[me]>=100 && guard++<4){
+    const r=Math.random();
+    let want = S.gold[me]>=300 && r<0.55 ? 'tank' : (S.gold[me]>=250 && r<0.75 ? 'art' : 'inf');
+    if (nMe>nFoe+4 && S.gold[me]<600) break;
+    if (!recruit(want,me)) { if(!recruit('inf',me)) break; }
+  }
+}
+// One AI action. Returns true when something happened.
+function aiStep(){
+  if (!S || S.over || online.active) return false;
+  const pendingSides = S.sides.filter(sd => isAI(sd) && alive(sd) && !S.ready[sd]);
+  if (!pendingSides.length) return false;
+  // round-robin: the camp with the most unplayed units goes first
+  pendingSides.sort((a,b)=>S.units.filter(u=>u.side===b&&!u.acted&&!TYPES[u.type].fixed).length - S.units.filter(u=>u.side===a&&!u.acted&&!TYPES[u.type].fixed).length);
+  const sd = pendingSides[0];
+  const units = S.units.filter(u=>u.side===sd && !u.acted && !TYPES[u.type].fixed).sort((a,b)=>AI_ORDER[a.type]-AI_ORDER[b.type]);
+  if (units.length){ aiUnitAct(units[0]); }
+  else { aiRecruit(sd); readyUp(sd); }
+  return true;
+}
+function aiFlush(){ let n=0; while (n++<400 && aiStep()); }
+setInterval(()=>{ if (S && !S.over && !online.active && !(S.ready[my()])){ if (aiStep()){ if (S.sel && !S.units.includes(S.sel)) S.sel=null; render(); ui(); } } }, 700);
+
+// ---------- rendering ----------
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const T = 80;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hash = (x,y,i=0) => { let h = (x*374761393 + y*668265263 + i*1274126177) | 0; h = (h ^ (h>>13)) * 1274126177; return ((h ^ (h>>16)) >>> 0) / 4294967296; };
+const fx = []; // transient effects {x,y,t0,type}
+let clock = 0;
+
+// --- static terrain layer (cached) ---
+const terrainCv = document.createElement('canvas'); terrainCv.width=W*T; terrainCv.height=H*T;
+const tc = terrainCv.getContext('2d');
+function paintTerrain(){
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    const t=tile(x,y); tc.save(); tc.translate(x*T,y*T);
+    // ground base with gentle variation
+    const v = hash(x,y,1);
+    const base = {P:[96,112,58],F:[60,84,46],H:[122,106,66],C:[110,106,98],R:[46,88,110],B:[46,88,110],S:[214,193,134],D:[196,167,101],M:[28,74,112]}[t];
+    const g = tc.createLinearGradient(0,0,T,T);
+    g.addColorStop(0,`rgb(${base[0]+8*v|0},${base[1]+10*v|0},${base[2]+4*v|0})`);
+    g.addColorStop(1,`rgb(${base[0]-10|0},${base[1]-10|0},${base[2]-6|0})`);
+    tc.fillStyle=g; tc.fillRect(0,0,T,T);
+    // grass tufts
+    if (t==='P'||t==='F'||t==='H'){
+      tc.strokeStyle='rgba(0,0,0,.14)'; tc.lineWidth=1.2;
+      for (let i=0;i<9;i++){ const gx=hash(x,y,10+i)*T, gy=hash(x,y,30+i)*T; tc.beginPath(); tc.moveTo(gx,gy+4); tc.lineTo(gx+1.5,gy-2); tc.moveTo(gx+3,gy+4); tc.lineTo(gx+4,gy-1); tc.stroke(); }
+    }
+    if (t==='F'){
+      for (let i=0;i<5;i++){
+        const cx=14+hash(x,y,50+i)*52, cy=16+hash(x,y,70+i)*48, r=9+hash(x,y,90+i)*6;
+        tc.fillStyle='rgba(0,0,0,.28)'; tc.beginPath(); tc.ellipse(cx+3,cy+r*0.7,r*1.05,r*0.5,0,0,7); tc.fill();
+        const rg=tc.createRadialGradient(cx-r*0.35,cy-r*0.4,1,cx,cy,r);
+        rg.addColorStop(0,'#6f9a4e'); rg.addColorStop(.6,'#3f6a34'); rg.addColorStop(1,'#243f22');
+        tc.fillStyle=rg; tc.beginPath(); tc.arc(cx,cy,r,0,7); tc.fill();
+      }
+    }
+    if (t==='H'){
+      const hill=(x0,peak,x1,yb,c1,c2)=>{ const gg=tc.createLinearGradient(x0,yb,x1,yb); gg.addColorStop(0,c1); gg.addColorStop(1,c2); tc.fillStyle=gg; tc.beginPath(); tc.moveTo(x0,yb); tc.quadraticCurveTo(peak[0],peak[1],x1,yb); tc.closePath(); tc.fill(); };
+      hill(2,[30,10],62,70,'#a8946a','#6a5b39'); hill(36,[62,26],80,70,'#9a875c','#5c4d31');
+      tc.strokeStyle='rgba(255,255,255,.18)'; tc.lineWidth=1.5; tc.beginPath(); tc.moveTo(8,68); tc.quadraticCurveTo(30,16,56,68); tc.stroke();
+    }
+    if (t==='S'){ tc.fillStyle='rgba(0,0,0,.08)'; for (let i=0;i<14;i++){ tc.beginPath(); tc.arc(hash(x,y,20+i)*T, hash(x,y,40+i)*T, 1.2, 0, 7); tc.fill(); } }
+    if (t==='D'){ tc.strokeStyle='rgba(120,90,40,.35)'; tc.lineWidth=2; for (let i=0;i<4;i++){ tc.beginPath(); tc.moveTo(0,14+i*18); tc.quadraticCurveTo(T/2, 4+i*18 + hash(x,y,i)*8, T, 14+i*18); tc.stroke(); } const dg=tc.createLinearGradient(0,0,T,T); dg.addColorStop(0,'rgba(255,240,200,.25)'); dg.addColorStop(1,'rgba(90,60,20,.25)'); tc.fillStyle=dg; tc.fillRect(0,0,T,T); }
+    if (t==='M'){ const wg=tc.createLinearGradient(0,0,T,T); wg.addColorStop(0,'#245a84'); wg.addColorStop(1,'#173f5f'); tc.fillStyle=wg; tc.fillRect(0,0,T,T);
+      const coast = [[-1,0],[1,0],[0,-1],[0,1]].some(([dx,dy])=> inb(x+dx,y+dy) && !'MRB'.includes(tile(x+dx,y+dy)));
+      if (coast){ tc.fillStyle='rgba(230,240,255,.35)'; tc.fillRect(0,0,T,T); } }
+    if (t==='R'||t==='B'){
+      const wg=tc.createLinearGradient(0,0,0,T); wg.addColorStop(0,'#2f5a74'); wg.addColorStop(1,'#254a62'); tc.fillStyle=wg; tc.fillRect(0,0,T,T);
+      // banks
+      tc.fillStyle='rgba(120,130,80,.35)';
+      const lb = inb(x-1,y) && !'RB'.includes(tile(x-1,y)), rb = inb(x+1,y) && !'RB'.includes(tile(x+1,y));
+      const tb = inb(x,y-1) && !'RB'.includes(tile(x,y-1)), bb = inb(x,y+1) && !'RB'.includes(tile(x,y+1));
+      if (lb) tc.fillRect(0,0,6,T); if (rb) tc.fillRect(T-6,0,6,T); if (tb) tc.fillRect(0,0,T,6); if (bb) tc.fillRect(0,T-6,T,6);
+    }
+    if (t==='B'){
+      tc.fillStyle='rgba(0,0,0,.3)'; tc.fillRect(0,26,T,40);
+      const pg=tc.createLinearGradient(0,18,0,60); pg.addColorStop(0,'#9c7a4a'); pg.addColorStop(1,'#6b4f2c'); tc.fillStyle=pg; tc.fillRect(0,18,T,42);
+      tc.strokeStyle='rgba(0,0,0,.35)'; tc.lineWidth=1.5; for(let s=6;s<T;s+=10){ tc.beginPath(); tc.moveTo(s,18); tc.lineTo(s,60); tc.stroke(); }
+      tc.fillStyle='#4a3520'; tc.fillRect(0,16,T,4); tc.fillRect(0,58,T,4);
+    }
+    if (t==='C'||S.cities[key(x,y)]!==undefined){
+      const cg=tc.createLinearGradient(0,0,0,T); cg.addColorStop(0,'#8d8a83'); cg.addColorStop(1,'#66635d'); tc.fillStyle=cg; tc.fillRect(0,0,T,T);
+      tc.fillStyle='rgba(0,0,0,.18)'; tc.fillRect(0,T-14,T,14); tc.fillRect(T/2-5,0,10,T);
+      tc.strokeStyle='rgba(255,255,255,.12)'; tc.setLineDash([4,4]); tc.beginPath(); tc.moveTo(T/2,0); tc.lineTo(T/2,T); tc.stroke(); tc.setLineDash([]);
+    }
+    tc.restore();
+  }
+  // soft vignette over the whole map
+  const vg=tc.createRadialGradient(W*T/2,H*T/2,H*T*0.35,W*T/2,H*T/2,W*T*0.7); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.35)');
+  tc.fillStyle=vg; tc.fillRect(0,0,W*T,H*T);
+}
+
+function drawCity(x,y){
+  const own=S.cities[key(x,y)], px=x*T, py=y*T;
+  const wall = SIDE[own] ? SIDE[own].wall : '#4f4c46';
+  const roof = SIDE[own] ? SIDE[own].color : '#7b7770';
+  const bld=(bx,by,bw,bh)=>{ ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(px+bx+3,py+by+3,bw,bh); ctx.fillStyle=wall; ctx.fillRect(px+bx,py+by,bw,bh); ctx.fillStyle=roof; ctx.fillRect(px+bx,py+by,bw,4);
+    ctx.fillStyle='#f2e6bf'; for(let wy=by+9;wy<by+bh-4;wy+=8) for(let wx=bx+3;wx<bx+bw-3;wx+=7) ctx.fillRect(px+wx,py+wy,3,4); };
+  bld(8,30,20,36); bld(31,14,18,52); bld(52,36,20,30);
+  if (own!=='N'){ ctx.fillStyle='#e8e2d0'; ctx.fillRect(px+5,py+4,2,16); ctx.fillStyle=roof; ctx.beginPath(); ctx.moveTo(px+7,py+4); ctx.lineTo(px+20,py+8); ctx.lineTo(px+7,py+12); ctx.closePath(); ctx.fill(); }
+}
+function drawUnit(u){
+  const px=u.x*T, py=u.y*T, t=TYPES[u.type], c=SIDE[u.side];
+  const done = u.acted || (u.moved && !canAttack(u));
+  const bob = (!REDUCED && S.sel===u) ? Math.sin(clock/180)*1.5 : 0;
+  ctx.save(); ctx.translate(px,py+bob);
+  if (done && !t.fixed) ctx.filter='saturate(.35) brightness(.75)';
+  ctx.fillStyle='rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(40,58,26,8,0,0,7); ctx.fill();
+  const bg=ctx.createLinearGradient(0,10,0,58); bg.addColorStop(0,lighten(c.color,.18)); bg.addColorStop(1,c.dark);
+  ctx.fillStyle=bg; ctx.strokeStyle='#0c0e0b'; ctx.lineWidth=2; roundRect(14,10,52,46,7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=1; roundRect(16,12,48,20,5); ctx.stroke();
+  ctx.fillStyle='#0c0e0b';
+  const f=fam(u);
+  if (f==='inf'){ ctx.beginPath(); ctx.arc(40,24,6,0,7); ctx.fill(); roundRect(32,31,16,18,4); ctx.fill(); ctx.fillRect(27,33,4,11); ctx.fillRect(49,33,4,11); ctx.fillStyle='#f1e8cf'; ctx.fillRect(48,28,10,2); }
+  if (f==='tank'){ roundRect(20,34,40,14,5); ctx.fill(); roundRect(29,25,20,11,3); ctx.fill(); ctx.fillRect(47,28,17,4); ctx.fillStyle='rgba(255,255,255,.25)'; for(let s=23;s<58;s+=6) ctx.fillRect(s,44,3,3); }
+  if (f==='art'){ ctx.beginPath(); ctx.arc(33,42,9,0,7); ctx.fill(); ctx.fillStyle=c.color; ctx.beginPath(); ctx.arc(33,42,3,0,7); ctx.fill(); ctx.fillStyle='#0c0e0b'; ctx.save(); ctx.translate(33,42); ctx.rotate(-0.65); ctx.fillRect(0,-3.5,28,7); ctx.fillRect(24,-5,5,10); ctx.restore(); }
+  if (u.type==='hq'){ ctx.fillRect(37,16,3,34); ctx.fillStyle='#f1e8cf'; ctx.beginPath(); ctx.moveTo(40,18); ctx.lineTo(62,24); ctx.lineTo(40,31); ctx.closePath(); ctx.fill(); ctx.fillStyle='#0c0e0b'; ctx.fillRect(26,48,28,4); ctx.font='bold 9px "Oswald",sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#f1e8cf'; ctx.fillText('QG',40,44); }
+  if (t.shop){ ctx.fillStyle='#ffe58a'; ctx.beginPath(); ctx.arc(20,18,6,0,7); ctx.fill(); ctx.fillStyle='#0c0e0b'; ctx.font='bold 8px "Oswald",sans-serif'; ctx.textAlign='center'; ctx.fillText('★',20,21); }
+  ctx.filter='none';
+  // hp bar
+  ctx.fillStyle='#0c0e0b'; roundRect(14,60,52,9,3); ctx.fill();
+  const ratio=u.hp/t.hp; ctx.fillStyle = ratio>0.5?'#8fc46f': ratio>0.25?'#e6bc4f':'#e0553d';
+  if (ratio>0) { roundRect(15,61,50*ratio,7,2); ctx.fill(); }
+  ctx.fillStyle='#f1e8cf'; ctx.font='bold 10px "IBM Plex Mono",monospace'; ctx.textAlign='center'; ctx.fillText(u.hp,40,68);
+  ctx.restore();
+}
+function lighten(hex,amt){ const n=parseInt(hex.slice(1),16); const r=n>>16,g=n>>8&255,b=n&255; return `rgb(${Math.min(255,r+255*amt|0)},${Math.min(255,g+255*amt|0)},${Math.min(255,b+255*amt|0)})`; }
+
+let terrainReady=false;
+function render2d(){
+  if (!terrainReady){ paintTerrain(); terrainReady=true; }
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.drawImage(terrainCv,0,0);
+  // animated water shimmer
+  ctx.save(); ctx.strokeStyle='rgba(180,220,240,.35)'; ctx.lineWidth=1.5;
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++) if (tile(x,y)==='R' || tile(x,y)==='M'){
+    for (let i=0;i<3;i++){ ctx.beginPath(); for(let s=0;s<=T;s+=6){ const ph = REDUCED?0:clock/500; ctx.lineTo(x*T+s, y*T+16+i*24+Math.sin(s/9+i*2+ph)*3); } ctx.stroke(); }
+  }
+  ctx.restore();
+  // grid
+  ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=1;
+  for (let x=0;x<=W;x++){ ctx.beginPath(); ctx.moveTo(x*T+.5,0); ctx.lineTo(x*T+.5,H*T); ctx.stroke(); }
+  for (let y=0;y<=H;y++){ ctx.beginPath(); ctx.moveTo(0,y*T+.5); ctx.lineTo(W*T,y*T+.5); ctx.stroke(); }
+  for (const k in S.cities){ const [x,y]=k.split(',').map(Number); drawCity(x,y); }
+  // highlights
+  const pulse = REDUCED?1:0.85+0.15*Math.sin(clock/220);
+  if (S.reach){ for (const k of S.reach){ const [x,y]=k.split(',').map(Number); ctx.fillStyle=`rgba(130,200,255,${0.28*pulse})`; ctx.fillRect(x*T+2,y*T+2,T-4,T-4); ctx.strokeStyle='rgba(180,225,255,.7)'; ctx.lineWidth=1.5; ctx.strokeRect(x*T+3.5,y*T+3.5,T-7,T-7); } }
+  if (S.targets){ for (const e of S.targets){ ctx.strokeStyle=`rgba(255,110,70,${pulse})`; ctx.lineWidth=4; ctx.strokeRect(e.x*T+4,e.y*T+4,T-8,T-8); ctx.strokeStyle='rgba(255,220,200,.6)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(e.x*T+T/2,e.y*T+T/2,T*0.34,0,7); ctx.stroke(); } }
+  // units sorted by row so shadows overlap naturally
+  for (const u of [...S.units].sort((a,b)=>a.y-b.y)) drawUnit(u);
+  if (S.sel){ ctx.strokeStyle='#ffe58a'; ctx.lineWidth=3; ctx.setLineDash([8,5]); ctx.lineDashOffset=REDUCED?0:-clock/40; ctx.strokeRect(S.sel.x*T+2,S.sel.y*T+2,T-4,T-4); ctx.setLineDash([]); }
+  // effects
+  const now=performance.now();
+  for (let i=fx.length-1;i>=0;i--){ const f=fx[i], p=(now-f.t0)/f.dur; if (p>=1){ fx.splice(i,1); continue; }
+    const cx=f.x*T+T/2, cy=f.y*T+T/2;
+    if (f.type==='hit'){ ctx.save(); ctx.globalAlpha=1-p; ctx.strokeStyle='#ffd27a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,cy,10+p*30,0,7); ctx.stroke(); ctx.fillStyle='rgba(255,120,60,'+(0.5*(1-p))+')'; ctx.beginPath(); ctx.arc(cx,cy,6+p*18,0,7); ctx.fill(); ctx.restore(); }
+    if (f.type==='text'){ ctx.save(); ctx.globalAlpha=1-p; ctx.font='bold 20px "Oswald",sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#0c0e0b'; ctx.fillText(f.txt,cx+1,cy-14-p*26+1); ctx.fillStyle=f.color; ctx.fillText(f.txt,cx,cy-14-p*26); ctx.restore(); }
+    if (f.type==='nuke'){ ctx.save(); const R=Math.max(W,H)*T; ctx.globalAlpha=Math.max(0,1-p*1.2); ctx.fillStyle='#fff6d0'; ctx.fillRect(0,0,W*T,H*T);
+      ctx.globalAlpha=1-p; ctx.strokeStyle='#ffb347'; ctx.lineWidth=18*(1-p)+2; ctx.beginPath(); ctx.arc(cx,cy,p*R,0,7); ctx.stroke();
+      const rg=ctx.createRadialGradient(cx,cy-p*120,4,cx,cy-p*120,60+p*160); rg.addColorStop(0,'rgba(255,240,180,.95)'); rg.addColorStop(.5,'rgba(255,120,40,.7)'); rg.addColorStop(1,'rgba(60,20,10,0)'); ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(cx,cy-p*120,60+p*160,0,7); ctx.fill();
+      ctx.fillStyle='rgba(90,60,40,'+(0.6*(1-p))+')'; ctx.fillRect(cx-30-p*20, cy-p*120, 60+p*40, p*140);
+      ctx.font='bold 46px "Oswald",sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#0c0e0b'; ctx.fillText('☢ BOMBE ATOMIQUE', cx+2, cy+2+40); ctx.fillStyle='#ffe58a'; ctx.fillText('☢ BOMBE ATOMIQUE', cx, cy+40); ctx.restore(); }
+    if (f.type==='boom'){ ctx.save(); ctx.globalAlpha=1-p; for(let j=0;j<8;j++){ const a=j/8*Math.PI*2, d=8+p*34; ctx.fillStyle=j%2?'#ffb347':'#e0553d'; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,5*(1-p)+1,0,7); ctx.fill(); } ctx.restore(); }
+  }
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function addFx(type,x,y,extra){ fx.push({type,x,y,t0:performance.now(),dur:type==='text'?900:type==='nuke'?2600:550,...extra}); }
+function render(){ if (view3dOn && V3) render3d(); else render2d(); }
+(function loop(ts){ clock=ts; if (S) render(); requestAnimationFrame(loop); })(0);
+
+// ---------- 3D view (three.js) ----------
+let V3 = null, view3dOn = false;
+const sideMats = {}, mats = {};
+function init3d(){
+  if (!window.THREE) return false;
+  try{
+    const host = document.getElementById('view3d');
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0e100d);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 300);
+    scene.add(new THREE.HemisphereLight(0xdfe9ff, 0x3a3826, 0.75));
+    const sun = new THREE.DirectionalLight(0xfff0d0, 1.25); sun.castShadow=true;
+    sun.shadow.mapSize.set(2048,2048); sun.shadow.bias=-0.0008;
+    scene.add(sun); scene.add(sun.target);
+    const amb = new THREE.AmbientLight(0x6a6a5a, 0.35); scene.add(amb);
+    for (const sd in SIDE){
+      const c=new THREE.Color(SIDE[sd].color), d=new THREE.Color(SIDE[sd].dark);
+      sideMats[sd] = {
+        main:new THREE.MeshStandardMaterial({color:c, roughness:.55, metalness:.15}),
+        dark:new THREE.MeshStandardMaterial({color:d, roughness:.6, metalness:.2}),
+        mainDim:new THREE.MeshStandardMaterial({color:c.clone().multiplyScalar(.45), roughness:.9}),
+        darkDim:new THREE.MeshStandardMaterial({color:d.clone().multiplyScalar(.45), roughness:.9}),
+      };
+    }
+    mats.black = new THREE.MeshStandardMaterial({color:0x14160f, roughness:.7});
+    mats.steel = new THREE.MeshStandardMaterial({color:0x3a3d38, roughness:.5, metalness:.5});
+    mats.trunk = new THREE.MeshStandardMaterial({color:0x5a4027, roughness:.9});
+    mats.leaf  = new THREE.MeshStandardMaterial({color:0x35602c, roughness:.9});
+    mats.leaf2 = new THREE.MeshStandardMaterial({color:0x4f8a3d, roughness:.9});
+    mats.water = new THREE.MeshStandardMaterial({color:0x2c6a8f, roughness:.15, metalness:.1, transparent:true, opacity:.85});
+    mats.deck  = new THREE.MeshStandardMaterial({color:0x8a6a3f, roughness:.85});
+    mats.wall  = new THREE.MeshStandardMaterial({color:0x8d8a83, roughness:.8});
+    mats.stone = new THREE.MeshStandardMaterial({color:0x6c6862, roughness:.9});
+    mats.hl    = new THREE.MeshBasicMaterial({color:0x8ac8ff, transparent:true, opacity:.45, depthWrite:false});
+    mats.tgt   = new THREE.MeshBasicMaterial({color:0xff6b4a, transparent:true, opacity:.8, depthWrite:false});
+    mats.sel   = new THREE.MeshBasicMaterial({color:0xffe58a});
+    mats.hit   = new THREE.MeshBasicMaterial({color:0xffd27a, transparent:true, opacity:.8});
+    mats.boom  = new THREE.MeshBasicMaterial({color:0xff7a3a, transparent:true, opacity:.9});
+    mats.flagN = new THREE.MeshStandardMaterial({color:0x9a968e, roughness:.9, side:THREE.DoubleSide});
+    for (const sd in SIDE) mats['flag'+sd] = new THREE.MeshStandardMaterial({color:SIDE[sd].color, roughness:.9, side:THREE.DoubleSide});
+    for (const t in TERRAIN) mats['t'+t] = new THREE.MeshStandardMaterial({color:new THREE.Color(TERRAIN[t].color), roughness:.95});
+    mats.tH.color.set('#8b7a4e'); mats.tP.color.set('#617238'); mats.tF.color.set('#4a6633'); mats.tS.color.set('#c9b074'); mats.tD.color.set('#b0925a');
+    mats.sea = new THREE.MeshStandardMaterial({color:0x1d4f7a, roughness:.1, metalness:.15, transparent:true, opacity:.9});
+    mats.foam = new THREE.MeshBasicMaterial({color:0xe8f2ff, transparent:true, opacity:.35, depthWrite:false});
+    V3 = { host, renderer, scene, camera, sun, terrain:null, tops:[], tileMeshes:[], cities:{}, units:{}, hl:new THREE.Group(), fxg:new THREE.Group(),
+           az:0.05, el:1.0, dist:16, target:new THREE.Vector3(), mapKey:null, hlKey:'', selRing:null, ray:new THREE.Raycaster(), pointers:new Map(), drag:null };
+    scene.add(V3.hl); scene.add(V3.fxg);
+    V3.selRing = new THREE.Mesh(new THREE.TorusGeometry(0.46,0.035,8,40), mats.sel); V3.selRing.rotation.x=Math.PI/2; V3.selRing.visible=false; scene.add(V3.selRing);
+    setupControls3d();
+    new ResizeObserver(resize3d).observe(host);
+    return true;
+  }catch(e){ console.warn('3D indisponible :', e); return false; }
+}
+function resize3d(){
+  if (!V3) return;
+  const w = Math.max(200, V3.host.clientWidth), h = Math.round(w * Math.max(0.5, Math.min(0.85, H/W*0.9)));
+  V3.renderer.setSize(w,h,false); V3.renderer.domElement.style.width='100%'; V3.renderer.domElement.style.height='auto';
+  V3.camera.aspect=w/h; V3.camera.updateProjectionMatrix();
+}
+function tileHeight(t){ return {P:0.3,F:0.3,H:0.78,C:0.3,R:0.1,B:0.3,S:0.22,D:0.55,M:0.06}[t]; }
+function build3d(){
+  const V=V3;
+  if (V.terrain){ V.scene.remove(V.terrain); V.terrain.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
+  V.terrain = new THREE.Group(); V.tileMeshes=[]; V.tops=[]; V.cities={};
+  const boxGeo = new THREE.BoxGeometry(1,1,1);
+  for (let y=0;y<H;y++){ V.tops[y]=[];
+    for (let x=0;x<W;x++){
+      const t=tile(x,y), h=tileHeight(t);
+      const base = new THREE.Mesh(boxGeo, t==='R'||t==='B' ? mats.water : t==='M' ? mats.sea : mats['t'+t]);
+      base.scale.set(0.98, h, 0.98); base.position.set(x+0.5, h/2 - 0.02, y+0.5); base.receiveShadow=true; base.userData={x,y};
+      V.terrain.add(base); V.tileMeshes.push(base);
+      let top=h;
+      if (t==='B'){ const deck=new THREE.Mesh(boxGeo, mats.deck); deck.scale.set(1,0.08,0.7); deck.position.set(x+0.5,0.3,y+0.5); deck.castShadow=true; deck.receiveShadow=true; deck.userData={x,y}; V.terrain.add(deck); V.tileMeshes.push(deck);
+        for (const dz of [-0.36,0.36]){ const rail=new THREE.Mesh(boxGeo, mats.trunk); rail.scale.set(1,0.1,0.04); rail.position.set(x+0.5,0.4,y+0.5+dz); V.terrain.add(rail); } top=0.34; }
+      if (t==='F'){ for (let i=0;i<3;i++){ const ox=0.2+hash(x,y,50+i)*0.6, oz=0.2+hash(x,y,70+i)*0.6, sc=0.7+hash(x,y,90+i)*0.5;
+        const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.06,0.25*sc,6), mats.trunk); trunk.position.set(x+ox, h+0.12*sc, y+oz); trunk.castShadow=true;
+        const crown=new THREE.Mesh(new THREE.ConeGeometry(0.22*sc,0.55*sc,7), i%2?mats.leaf:mats.leaf2); crown.position.set(x+ox, h+0.25*sc+0.27*sc, y+oz); crown.castShadow=true;
+        V.terrain.add(trunk, crown); } }
+      if (t==='D'){ const cap=new THREE.Mesh(new THREE.ConeGeometry(0.48,0.18,6), mats.tD); cap.position.set(x+0.5, h+0.08, y+0.5); cap.rotation.y=hash(x,y,5)*6; cap.castShadow=true; cap.receiveShadow=true; V.terrain.add(cap); top=h+0.1; }
+      if (t==='M' && [[-1,0],[1,0],[0,-1],[0,1]].some(([dx,dy])=> inb(x+dx,y+dy) && !'MRB'.includes(tile(x+dx,y+dy)))){ const foam=new THREE.Mesh(new THREE.PlaneGeometry(0.98,0.98), mats.foam); foam.rotation.x=-Math.PI/2; foam.position.set(x+0.5, h+0.01, y+0.5); V.terrain.add(foam); }
+      if (t==='H'){ const cap=new THREE.Mesh(new THREE.ConeGeometry(0.5,0.22,5), mats.tH); cap.position.set(x+0.5, h+0.1, y+0.5); cap.rotation.y=hash(x,y,3)*6; cap.castShadow=true; cap.receiveShadow=true; V.terrain.add(cap); top=h+0.12; }
+      if (S.cities[key(x,y)]!==undefined){
+        const g=new THREE.Group(); g.position.set(x,h,y);
+        const roofs=[];
+        for (const [bx,bz,bw,bh,bd] of [[0.22,0.32,0.26,0.45,0.26],[0.55,0.25,0.24,0.7,0.24],[0.68,0.68,0.24,0.35,0.24],[0.28,0.72,0.22,0.3,0.22]]){
+          const b=new THREE.Mesh(boxGeo, mats.wall); b.scale.set(bw,bh,bd); b.position.set(bx,bh/2,bz); b.castShadow=true; b.receiveShadow=true; g.add(b);
+          const r=new THREE.Mesh(boxGeo, mats.flagN); r.scale.set(bw+0.04,0.06,bd+0.04); r.position.set(bx,bh+0.03,bz); g.add(r); roofs.push(r);
+        }
+        const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.9,6), mats.steel); pole.position.set(0.1,0.45,0.1); g.add(pole);
+        const flag=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.18), mats.flagN); flag.position.set(0.26,0.8,0.1); g.add(flag);
+        V.terrain.add(g); V.cities[key(x,y)]={roofs,flag,g};
+      }
+      V.tops[y][x]=top;
+    }
+  }
+  // ground slab
+  const slab=new THREE.Mesh(boxGeo, mats.stone); slab.scale.set(W+1.2,0.3,H+1.2); slab.position.set(W/2,-0.2,H/2); slab.receiveShadow=true; V.terrain.add(slab);
+  V.scene.add(V.terrain);
+  V.target.set(W/2,0,H/2); V.dist = Math.max(W,H)*1.2+2;
+  V.sun.position.set(W/2-8, 14, H/2+6); V.sun.target.position.copy(V.target);
+  const sc=V.sun.shadow.camera; sc.left=-W; sc.right=W; sc.top=H; sc.bottom=-H; sc.near=1; sc.far=60; sc.updateProjectionMatrix();
+  V.mapKey = mapId+'|'+W+'x'+H;
+  for (const id in V.units){ V.scene.remove(V.units[id].g); } V.units={};
+}
+function hpSprite(u){
+  const t=TYPES[u.type], c=document.createElement('canvas'); c.width=128; c.height=40; const g=c.getContext('2d');
+  g.fillStyle='rgba(12,14,11,.85)'; g.fillRect(0,12,128,16);
+  const r=u.hp/t.hp; g.fillStyle = r>0.5?'#8fc46f': r>0.25?'#e6bc4f':'#e0553d'; g.fillRect(3,15,122*r,10);
+  g.fillStyle='#f1e8cf'; g.font='bold 20px "IBM Plex Mono",monospace'; g.textAlign='center'; g.fillText(u.hp,64,9+2);
+  const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false})); sp.scale.set(1.0,0.32,1); sp.center.set(0.5,0); return sp;
+}
+function textSprite(txt,color){
+  const c=document.createElement('canvas'); c.width=128; c.height=64; const g=c.getContext('2d');
+  g.font='bold 40px "Oswald",sans-serif'; g.textAlign='center'; g.lineWidth=6; g.strokeStyle='#0c0e0b'; g.strokeText(txt,64,46); g.fillStyle=color; g.fillText(txt,64,46);
+  const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false})); sp.scale.set(1.2,0.6,1); return sp;
+}
+function buildUnit(u){
+  const g=new THREE.Group(), M=sideMats[u.side], box=new THREE.BoxGeometry(1,1,1);
+  const part=(geo,mat,x,y,z,role)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; if(role) m.userData.role=role; g.add(m); return m; };
+  const base=part(new THREE.CylinderGeometry(0.4,0.44,0.1,24), M.main, 0,0.05,0,'main');
+  const f=fam(u);
+  if (f==='inf'){
+    for (const [ox,oz] of [[-0.14,0.1],[0.14,0.1],[0,-0.14]]){
+      part(new THREE.CylinderGeometry(0.07,0.09,0.32,8), M.dark, ox,0.26,oz,'dark');
+      part(new THREE.SphereGeometry(0.075,10,8), M.main, ox,0.47,oz,'main');
+      const rifle=part(new THREE.CylinderGeometry(0.012,0.012,0.3,5), mats.black, ox+0.1,0.3,oz); rifle.rotation.x=0.9;
+    }
+  }
+  if (f==='tank'){
+    for (const dx of [-0.26,0.26]){ const tr=part(box, mats.black, dx,0.16,0); tr.scale.set(0.16,0.14,0.72); }
+    const hull=part(box, M.main, 0,0.26,0,'main'); hull.scale.set(0.56,0.18,0.7);
+    const tur=part(box, M.dark, 0,0.42,-0.05,'dark'); tur.scale.set(0.34,0.14,0.36);
+    const barrel=part(new THREE.CylinderGeometry(0.03,0.035,0.55,8), mats.steel, 0,0.44,0.35); barrel.rotation.x=Math.PI/2;
+  }
+  if (f==='art'){
+    for (const dx of [-0.24,0.24]){ const w=part(new THREE.CylinderGeometry(0.14,0.14,0.06,14), mats.black, dx,0.19,0.05); w.rotation.z=Math.PI/2; }
+    const axle=part(new THREE.CylinderGeometry(0.03,0.03,0.5,6), mats.steel, 0,0.19,0.05); axle.rotation.z=Math.PI/2;
+    const shield=part(box, M.dark, 0,0.32,0.12,'dark'); shield.scale.set(0.4,0.22,0.04);
+    const barrel=part(new THREE.CylinderGeometry(0.035,0.05,0.7,8), mats.steel, 0,0.42,0.28); barrel.rotation.x=Math.PI/2-0.6;
+    const trail=part(box, M.main, 0,0.14,-0.22,'main'); trail.scale.set(0.12,0.08,0.45);
+  }
+  if (u.type==='hq'){
+    const b=part(box, M.dark, 0,0.3,0,'dark'); b.scale.set(0.72,0.5,0.72);
+    const roof=part(box, M.main, 0,0.58,0,'main'); roof.scale.set(0.8,0.08,0.8);
+    const pole=part(new THREE.CylinderGeometry(0.02,0.02,0.9,6), mats.steel, 0.25,1.0,0.25);
+    const flag=part(new THREE.PlaneGeometry(0.36,0.22), mats['flag'+u.side], 0.44,1.3,0.25);
+    const tent=part(new THREE.ConeGeometry(0.22,0.25,4), M.main, -0.2,0.74,-0.2,'main');
+  }
+  if (TYPES[u.type].shop){ const star=new THREE.Mesh(new THREE.OctahedronGeometry(0.07), mats.sel); star.position.set(-0.3,0.55,-0.3); g.add(star); }
+  if (u.type==='heavy') g.scale.set(1.15,1.15,1.15);
+  const hp=hpSprite(u); hp.position.y=0.9; g.add(hp);
+  g.userData={hpKey:u.hp, dim:null, hp};
+  return g;
+}
+function setDim(g, dim){
+  if (g.userData.dim===dim) return; g.userData.dim=dim;
+  const sd=g.userData.side, M=sideMats[sd];
+  g.traverse(o=>{ if(o.userData.role==='main') o.material = dim?M.mainDim:M.main; if(o.userData.role==='dark') o.material = dim?M.darkDim:M.dark; });
+}
+function render3d(){
+  const V=V3;
+  if (V.mapKey!==mapId+'|'+W+'x'+H) build3d();
+  // city ownership
+  for (const k in V.cities){ const own=S.cities[k]; const m = SIDE[own] ? mats['flag'+own] : mats.flagN; const c=V.cities[k]; if (c.flag.material!==m){ c.flag.material=m; for (const r of c.roofs) r.material=m; } }
+  // units
+  const seen=new Set();
+  for (const u of S.units){
+    seen.add(u.id);
+    let e=V.units[u.id];
+    if (e && (e.type!==u.type || e.side!==u.side)){ V.scene.remove(e.g); e=null; }
+    if (!e){ const g=buildUnit(u); g.userData.side=u.side; V.scene.add(g); e=V.units[u.id]={g, type:u.type, side:u.side}; g.position.set(u.x+0.5, V.tops[u.y][u.x], u.y+0.5); }
+    const g=e.g;
+    // glide to the new tile
+    const gx=u.x+0.5, gz=u.y+0.5;
+    if (!REDUCED){ g.position.x += (gx-g.position.x)*0.25; g.position.z += (gz-g.position.z)*0.25; } else { g.position.x=gx; g.position.z=gz; }
+    const ty = V.tops[u.y][u.x]; g.position.y += (ty-g.position.y)*0.3;
+    if (Math.abs(g.position.x-gx)>0.02 || Math.abs(g.position.z-gz)>0.02){ g.rotation.y = Math.atan2(gx-g.position.x, gz-g.position.z); }
+    if (g.userData.hpKey!==u.hp){ g.remove(g.userData.hp); const hp=hpSprite(u); hp.position.y=0.9; g.add(hp); g.userData.hp=hp; g.userData.hpKey=u.hp; }
+    setDim(g, !!(u.acted || (u.moved && !canAttack(u))) && !TYPES[u.type].fixed);
+    if (S.sel===u){ g.position.y = ty + (REDUCED?0:Math.sin(clock/180)*0.03); }
+  }
+  for (const id in V.units) if (!seen.has(+id)){ V.scene.remove(V.units[id].g); delete V.units[id]; }
+  // highlights
+  const hk = (S.reach?[...S.reach].join(';'):'') + '|' + (S.targets?S.targets.map(t=>t.id).join(','):'') ;
+  if (hk!==V.hlKey){ V.hlKey=hk; while (V.hl.children.length) V.hl.remove(V.hl.children[0]);
+    const pg=new THREE.PlaneGeometry(0.92,0.92);
+    if (S.reach) for (const k of S.reach){ const [x,y]=k.split(',').map(Number); const m=new THREE.Mesh(pg, mats.hl); m.rotation.x=-Math.PI/2; m.position.set(x+0.5, V.tops[y][x]+0.02, y+0.5); V.hl.add(m); }
+    if (S.targets) for (const e of S.targets){ const m=new THREE.Mesh(new THREE.TorusGeometry(0.48,0.05,8,36), mats.tgt); m.rotation.x=Math.PI/2; m.position.set(e.x+0.5, V.tops[e.y][e.x]+0.04, e.y+0.5); V.hl.add(m); }
+  }
+  if (S.targets) mats.tgt.opacity = 0.6 + 0.3*Math.sin(clock/150);
+  if (S.sel){ V.selRing.visible=true; V.selRing.position.set(S.sel.x+0.5, V.tops[S.sel.y][S.sel.x]+0.05, S.sel.y+0.5); V.selRing.rotation.z = clock/600; } else V.selRing.visible=false;
+  // effects
+  const now=performance.now();
+  for (let i=fx.length-1;i>=0;i--){ const f=fx[i], p=(now-f.t0)/f.dur;
+    if (p>=1){ if (f.obj){ V.fxg.remove(f.obj); } fx.splice(i,1); continue; }
+    const top = V.tops[f.y] ? V.tops[f.y][f.x] : 0.3;
+    if (!f.obj){
+      if (f.type==='hit'){ f.obj=new THREE.Mesh(new THREE.SphereGeometry(0.3,12,10), mats.hit.clone()); f.obj.position.set(f.x+0.5, top+0.4, f.y+0.5); }
+      if (f.type==='text'){ f.obj=textSprite(f.txt, f.color); f.obj.position.set(f.x+0.5, top+1.1, f.y+0.5); }
+      if (f.type==='nuke'){ f.obj=new THREE.Group();
+        const fire=new THREE.Mesh(new THREE.SphereGeometry(1,24,18), new THREE.MeshBasicMaterial({color:0xffc060, transparent:true, opacity:.95})); fire.name='fire'; f.obj.add(fire);
+        const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.6,1.2,1,16,1,true), new THREE.MeshBasicMaterial({color:0x8a6a50, transparent:true, opacity:.7, side:THREE.DoubleSide})); stem.name='stem'; f.obj.add(stem);
+        const ring=new THREE.Mesh(new THREE.TorusGeometry(1,0.12,8,48), new THREE.MeshBasicMaterial({color:0xffe0a0, transparent:true, opacity:.9})); ring.name='ring'; ring.rotation.x=Math.PI/2; f.obj.add(ring);
+        f.obj.position.set(f.x+0.5, 0.3, f.y+0.5); }
+      if (f.type==='boom'){ f.obj=new THREE.Group(); for (let j=0;j<8;j++){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.09,6,6), mats.boom.clone()); m.userData.dir=[Math.cos(j/8*6.28), 0.6+Math.random()*0.8, Math.sin(j/8*6.28)]; f.obj.add(m); } f.obj.position.set(f.x+0.5, top+0.3, f.y+0.5); }
+      V.fxg.add(f.obj);
+    }
+    if (f.type==='hit'){ const sc=0.3+p*1.4; f.obj.scale.set(sc,sc,sc); f.obj.material.opacity=0.8*(1-p); }
+    if (f.type==='text'){ f.obj.position.y = top+1.1+p*0.8; f.obj.material.opacity=1-p; }
+    if (f.type==='nuke'){ const fire=f.obj.getObjectByName('fire'), stem=f.obj.getObjectByName('stem'), ring=f.obj.getObjectByName('ring'); const R=Math.max(W,H);
+      const rise=p*R*0.45; fire.position.y=1+rise; const fs=1+p*R*0.22; fire.scale.set(fs,fs*0.8,fs); fire.material.opacity=Math.max(0,1-p*1.1); fire.material.color.setHSL(0.08-0.06*p,1,0.65-0.25*p);
+      stem.position.y=rise/2; stem.scale.set(1+p*1.5,Math.max(0.01,rise),1+p*1.5); stem.material.opacity=0.7*(1-p);
+      const rs=0.5+p*R*0.9; ring.scale.set(rs,rs,1); ring.material.opacity=Math.max(0,0.9-p); }
+    if (f.type==='boom'){ for (const m of f.obj.children){ const d=m.userData.dir; m.position.set(d[0]*p*1.2, d[1]*p*1.5 - p*p*1.6, d[2]*p*1.2); m.material.opacity=1-p; } }
+  }
+  // camera
+  const cam=V.camera, el=V.el, az=V.az;
+  cam.position.set(V.target.x + V.dist*Math.cos(el)*Math.sin(az), V.target.y + V.dist*Math.sin(el), V.target.z + V.dist*Math.cos(el)*Math.cos(az));
+  cam.lookAt(V.target);
+  V.renderer.render(V.scene, cam);
+}
+function setupControls3d(){
+  const V=V3, el=V.renderer.domElement;
+  el.addEventListener('pointerdown', ev=>{ V.pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY}); if (V.pointers.size===1) V.drag={x:ev.clientX,y:ev.clientY,moved:false}; el.setPointerCapture(ev.pointerId); });
+  el.addEventListener('pointermove', ev=>{
+    if (!V.pointers.has(ev.pointerId)) return;
+    const prev=V.pointers.get(ev.pointerId); V.pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+    if (V.pointers.size===2){ const [a,b]=[...V.pointers.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y); if (V.pinch){ V.dist = Math.max(6, Math.min(60, V.dist * V.pinch/d)); } V.pinch=d; V.drag && (V.drag.moved=true); return; }
+    if (!V.drag) return;
+    const dx=ev.clientX-prev.x, dy=ev.clientY-prev.y;
+    if (Math.abs(ev.clientX-V.drag.x)+Math.abs(ev.clientY-V.drag.y) > 6) V.drag.moved=true;
+    if (V.drag.moved){ V.az -= dx*0.008; V.el = Math.max(0.35, Math.min(1.45, V.el + dy*0.006)); }
+  });
+  const up = ev=>{
+    const wasClick = V.drag && !V.drag.moved && V.pointers.size===1;
+    V.pointers.delete(ev.pointerId); if (V.pointers.size<2) V.pinch=null;
+    if (wasClick){ const r=el.getBoundingClientRect(); const m=new THREE.Vector2(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1);
+      V.ray.setFromCamera(m, V.camera); const hits=V.ray.intersectObjects(V.tileMeshes, false); if (hits.length){ const {x,y}=hits[0].object.userData; boardClick(x,y); } }
+    if (V.pointers.size===0) V.drag=null;
+  };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  el.addEventListener('wheel', ev=>{ ev.preventDefault(); V.dist = Math.max(6, Math.min(60, V.dist * (ev.deltaY>0?1.1:0.9))); }, {passive:false});
+  el.addEventListener('contextmenu', ev=>ev.preventDefault());
+}
+function setView3d(on){
+  view3dOn = on && !!V3;
+  document.getElementById('view3d').hidden = !view3dOn; cv.hidden = view3dOn;
+  document.getElementById('btnView').textContent = view3dOn ? 'Vue 2D' : 'Vue 3D';
+  document.getElementById('btnView').disabled = !V3;
+  for (const id of ['btnCamL','btnCamR','btnCamReset','camHint']) document.getElementById(id).hidden = !view3dOn;
+  try{ localStorage.setItem('fdf-view', view3dOn?'3d':'2d'); }catch(e){}
+  if (view3dOn) resize3d();
+}
+document.getElementById('btnView').addEventListener('click', ()=>setView3d(!view3dOn));
+document.getElementById('btnCamL').addEventListener('click', ()=>{ if(V3) V3.az += Math.PI/4; });
+document.getElementById('btnCamR').addEventListener('click', ()=>{ if(V3) V3.az -= Math.PI/4; });
+document.getElementById('btnCamReset').addEventListener('click', ()=>{ if(V3){ V3.az=0.05; V3.el=1.0; V3.dist=Math.max(W,H)*1.2+2; } });
+{
+  const ok = init3d();
+  let pref='3d'; try{ pref=localStorage.getItem('fdf-view')||'3d'; }catch(e){}
+  setView3d(ok && pref!=='2d');
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+function ui(){
+  $('sTurn').textContent=S.turn; $('sBounty').textContent = bounty()+' or'; $('sBounty').title = (S.deaths||0)+' unité(s) détruite(s)'; { const live=S.sides.filter(alive); const n=live.filter(sd=>S.ready[sd]).length; $('sSide').textContent=`${n} / ${live.length} prêts`; $('sSide').style.color=''; }
+  $('sSides').innerHTML = S.sides.map(sd => `<div class="side ${alive(sd)?'':'dead'} ${sd===my()?'me':''} ${S.ready[sd]?'ready':''}" style="border-color:${SIDE[sd].color}"><span class="k" style="color:${SIDE[sd].color}">${SIDE[sd].name}</span><span class="v">${S.gold[sd]} or · ${Object.values(S.cities).filter(c=>c===sd).length} villes</span></div>`).join('');
+  $('btnEnd').disabled = !myTurn(); $('btnEnd').textContent = committing ? 'Envoi…' : (my() && S.ready[my()]) ? 'En attente des autres…' : 'Fin du tour';
+  $('btnWait').disabled = !(S.sel && S.sel.side===my() && myTurn());
+  const sel=$('sel');
+  if (S.sel){
+    const u=S.sel, t=TYPES[u.type];
+    sel.innerHTML = `<div class="unitname" style="color:${SIDE[u.side].color}">${t.name} ${SIDE[u.side].name.toLowerCase()}</div>
+      <dl class="unitinfo"><dt>Position</dt><dd>(${u.x},${u.y}) · ${TERRAIN[tile(u.x,u.y)].name} déf ${tdef(u.x,u.y)>=0?'+':''}${tdef(u.x,u.y)}</dd>
+      <dt>Points de vie</dt><dd>${u.hp} / ${t.hp}</dd><dt>Attaque / Déf.</dt><dd>${t.atk} / ${t.def}</dd>
+      <dt>Mouvement</dt><dd>${t.mv}</dd><dt>Portée</dt><dd>${t.min===t.max?t.min:t.min+'–'+t.max}${t.indirect?' (tir indirect : ne bouge pas et ne tire pas le même tour)':''}</dd>
+      <dt>État</dt><dd>${u.acted?'A agi':u.moved?'A bougé':'Prêt'}</dd></dl>`;
+  } else sel.innerHTML=`<p class="empty">${my() ? 'Cliquez sur une unité '+SIDE[my()].adj+'.' : 'Vous observez la partie.'}</p>`;
+  const shop=$('shopCard');
+  if (S.sel && S.sel.type==='hq' && S.sel.side===my() && myTurn()){
+    shop.hidden=false;
+    $('shop').innerHTML = ['inf','tank','art'].map(k=>`<button data-buy="${k}" ${S.gold[my()]<TYPES[k].cost?'disabled':''}>${TYPES[k].name}<span>${TYPES[k].cost} or</span></button>`).join('');
+  } else shop.hidden=true;
+  $('log').innerHTML = S.log.map(l=>`<div class="${l.cls||''}">${l.msg}</div>`).join('');
+  shopUI();
+  netUI();
+  $('hint').textContent = S.over ? 'Partie terminée.' : (strikeArmed && S.strike[my()]>0) ? 'Frappe aérienne armée : cliquez sur une unité ennemie.' : (my() && S.ready[my()]) ? 'Vos ordres sont donnés. Le tour se résout quand tous les camps sont prêts.' : (online.active && online.meta?.status==='waiting') ? 'En attente des autres joueurs.' : S.sel ? (S.sel.type==='hq' ? 'Recrutez une unité : elle apparaît à côté du QG.' : canAttack(S.sel) ? 'Case bleue : se déplacer. Cadre rouge : attaquer.' : 'Cette unité a terminé.') : 'Sélectionnez une unité, déplacez-la, puis attaquez. Le QG recrute.';
+}
+function select(u){
+  S.sel=u; S.reach=null; S.targets=null;
+  if (u && u.side===my() && myTurn()){
+    if (!u.moved && !u.acted && !TYPES[u.type].fixed) S.reach=reachable(u);
+    if (canAttack(u)) S.targets=targetsFrom(u,u.x,u.y);
+  }
+  render(); ui();
+}
+cv.addEventListener('click', ev => {
+  const r=cv.getBoundingClientRect();
+  boardClick(Math.floor((ev.clientX-r.left)/r.width*W), Math.floor((ev.clientY-r.top)/r.height*H));
+});
+let strikeArmed=false;
+function shopUI(){
+  const day=dayKey(), offers=shopOffers(day), me=my();
+  const ms=nextRefreshMs(), hh=Math.floor(ms/36e5), mm=Math.floor(ms%36e5/6e4);
+  $('shopRefresh').textContent = `renouvelée dans ${hh} h ${String(mm).padStart(2,'0')}`;
+  const bought = (S.shop && S.shop.day===day && me) ? (S.shop.bought[me]||{}) : {};
+  $('offers').innerHTML = offers.map(o=>{ const banned = o.kind==='repair' && S.nuked; const left = banned ? 0 : SHOP_LIMIT-(bought[o.id]||0); const can = !banned && myTurn() && left>0 && S.gold[me]>=o.cost;
+    return `<div class="offer ${left<=0?'sold':''}"><span class="n">${o.name}${o.promo?'<span class="promo">−20 %</span>':''}</span><span class="d">${o.desc}</span><span class="left">${banned?'☢ interdit après la bombe':left>0?left+' restant'+(left>1?'s':''):'épuisé'}</span><button data-shop="${o.id}" ${can?'':'disabled'}>Acheter<span class="price">${o.cost} or${o.promo?' <span class="old">'+o.price+'</span>':''}</span></button></div>`; }).join('')
+    + (me && S.strike[me]>0 ? `<div class="offer"><span class="n">Frappe aérienne prête ×${S.strike[me]}</span><span class="d">Choisissez une unité ennemie sur la carte.</span><button id="btnStrike" class="${strikeArmed?'strike-armed':''}" ${myTurn()?'':'disabled'}>${strikeArmed?'Annuler':'Viser'}</button></div>` : '');
+}
+$('offers').addEventListener('click', ev=>{
+  const b=ev.target.closest('button'); if(!b) return;
+  if (b.id==='btnStrike'){ strikeArmed=!strikeArmed; select(null); return; }
+  if (b.dataset.shop && myTurn()) commit({t:'shop', side:my(), item:b.dataset.shop, day:dayKey()});
+});
+setInterval(()=>{ if (S) shopUI(); }, 30000);
+function boardClick(x,y){
+  if (!myTurn()) return;
+  if (!inb(x,y)) return;
+  const u=unitAt(x,y);
+  if (S.strike[my()]>0 && strikeArmed){ if (u && u.side!==my()){ strikeArmed=false; select(null); commit({t:'strike', side:my(), target:u.id}); } return; }
+  if (S.sel && S.sel.side===my()){
+    if (S.targets && u && S.targets.includes(u)){ const a=S.sel; select(null); commit({t:'attack', side:my(), id:a.id, target:u.id}); return; }
+    if (S.reach && S.reach.has(key(x,y)) && !u){ const s=S.sel; commit({t:'move', side:my(), id:s.id, x, y}).then(()=>{ const u2=byId(s.id); if (u2 && !u2.acted) select(u2); else select(null); }); return; }
+  }
+  select(u||null);
+}
+$('btnWait').addEventListener('click', ()=>{ if(S.sel && S.sel.side===my() && myTurn()){ const id=S.sel.id; select(null); commit({t:'wait', side:my(), id}); } });
+$('btnEnd').addEventListener('click', endTurn);
+$('shop').addEventListener('click', ev=>{ const b=ev.target.closest('[data-buy]'); if(!b) return; if(!myTurn()) return; commit({t:'recruit', side:my(), type:b.dataset.buy}); });
+const rules=$('rules');
+function openRules(){ rules.hidden=false; $('btnRulesClose').focus(); }
+function closeRules(){ rules.hidden=true; try{ localStorage.setItem('fdf-rules','1'); }catch(e){} }
+$('btnRules').addEventListener('click', openRules);
+$('btnRulesClose').addEventListener('click', closeRules); $('btnRulesClose2').addEventListener('click', closeRules);
+rules.addEventListener('click', ev=>{ if(ev.target===rules) closeRules(); });
+document.addEventListener('keydown', ev=>{ if(ev.key==='Escape' && !rules.hidden) closeRules(); });
+try{ if(!localStorage.getItem('fdf-rules')) openRules(); }catch(e){}
+$('btnRestart').addEventListener('click', ()=>{ $('overlay').hidden=true; if(online.active) leaveGame(); mapId=selMap.value; diffId=selDiff.value; nPlayers=+selPlayers.value; newGame(); setupUI(); });
+
+// ---------- campaign setup ----------
+const selMap=$('selMap'), selDiff=$('selDiff'), selPlayers=$('selPlayers');
+selMap.innerHTML = Object.entries(MAPS).map(([k,m])=>`<option value="${k}">${m.name} (${m.w}×${m.h})</option>`).join('');
+selDiff.innerHTML = Object.entries(DIFF).map(([k,d])=>`<option value="${k}">${d.name}</option>`).join('');
+try{ const sm=localStorage.getItem('fdf-map'), sd=localStorage.getItem('fdf-diff'), sp=+localStorage.getItem('fdf-players'); if(MAPS[sm]) mapId=sm; if(DIFF[sd]) diffId=sd; if(sp>=2&&sp<=4) nPlayers=sp; }catch(e){}
+selMap.value=mapId; selDiff.value=diffId; selPlayers.value=nPlayers;
+function setupUI(){ $('mapDesc').textContent=MAPS[selMap.value].desc + ((+selPlayers.value>=3 && !MAPS[selMap.value].big) ? ' — Petite carte pour '+selPlayers.value+' camps : La Grande Croisée est recommandée.' : ''); $('diffDesc').textContent=DIFF[selDiff.value].hint; selDiff.disabled = online.active; $('btnNew').textContent = online.active ? 'Quitter et jouer en solo' : 'Nouvelle partie solo'; }
+selMap.addEventListener('change', ()=>{ try{localStorage.setItem('fdf-map',selMap.value);}catch(e){} setupUI(); });
+selPlayers.addEventListener('change', ()=>{ try{localStorage.setItem('fdf-players',selPlayers.value);}catch(e){} if (+selPlayers.value>=3 && !MAPS[selMap.value].big){ selMap.value='croisee'; try{localStorage.setItem('fdf-map','croisee');}catch(e){} } setupUI(); });
+selDiff.addEventListener('change', ()=>{ try{localStorage.setItem('fdf-diff',selDiff.value);}catch(e){} setupUI(); });
+$('btnNew').addEventListener('click', ()=>{ if (online.active) leaveGame(); mapId=selMap.value; diffId=selDiff.value; nPlayers=+selPlayers.value; $('overlay').hidden=true; newGame(); setupUI(); });
+setupUI();
+
+// ---------- actions ----------
+const byId = id => S.units.find(u=>u.id===id);
+function applyAction(act){
+  switch(act.t){
+    case 'move': { const u=byId(act.id); if(!u || u.side!==act.side || u.moved || u.acted) return; if (unitAt(act.x,act.y) || !reachable(u).has(key(act.x,act.y))) return; doMove(u,act.x,act.y); if (!canAttack(u) || !targetsFrom(u,u.x,u.y).length) u.acted=true; break; }
+    case 'attack': { const a=byId(act.id), d=byId(act.target); if(!a || !d || a.side!==act.side || !canAttack(a)) return; if (!targetsFrom(a,a.x,a.y).includes(d)) return; doAttack(a,d); break; }
+    case 'wait': { const u=byId(act.id); if(!u || u.side!==act.side) return; u.acted=true; u.moved=true; break; }
+    case 'recruit': { if (!recruit(act.type, act.side)) log('Aucune case libre autour du QG.','g'); break; }
+    case 'ready': { readyUp(act.side); break; }
+    case 'shop': {
+      const day = act.day || dayKey();
+      if (Math.abs(new Date(day+'T00:00:00Z') - new Date(dayKey()+'T00:00:00Z')) > 864e5) return;   // stale offer
+      const offer = shopOffers(day).find(o=>o.id===act.item); if (!offer) return;
+      if (S.shop.day!==day){ S.shop={day, bought:{}}; }
+      const b = S.shop.bought[act.side] = S.shop.bought[act.side] || {};
+      if ((b[offer.id]||0) >= SHOP_LIMIT) return;
+      if (S.gold[act.side] < offer.cost) return;
+      if (!alive(act.side)) return;
+      if (offer.kind==='repair' && S.nuked){ log('Kit de réparation interdit : les retombées empêchent tout soin.','g'); return; }
+      let ok=true;
+      if (offer.kind==='unit'){ const g=S.gold[act.side]; S.gold[act.side]=TYPES[offer.type].cost; ok = recruit(offer.type, act.side); S.gold[act.side] = ok ? g-offer.cost : g; if(!ok) log('Aucune case libre autour du QG.','g'); }
+      else {
+        S.gold[act.side]-=offer.cost;
+        if (offer.kind==='repair'){ for (const u of S.units) if (u.side===act.side) u.hp=Math.min(TYPES[u.type].hp, u.hp+4); }
+        if (offer.kind==='fortify'){ S.bonus[act.side] = {...(S.bonus[act.side]||{}), hqDef:(S.bonus[act.side]?.hqDef||0)+2}; }
+        if (offer.kind==='bounty'){ S.bonus[act.side] = {...(S.bonus[act.side]||{}), income:(S.bonus[act.side]?.income||0)+25}; }
+        if (offer.kind==='strike'){ S.strike[act.side] = (S.strike[act.side]||0)+1; }
+        log(`${SIDE[act.side].name} : ${offer.name} (−${offer.cost} or).`, 's'+act.side);
+      }
+      if (ok) b[offer.id]=(b[offer.id]||0)+1;
+      break;
+    }
+    case 'strike': {
+      if (!(S.strike[act.side]>0)) return; const d=byId(act.target); if (!d || d.side===act.side) return;
+      S.strike[act.side]--; d.hp-=5; addFx('hit',d.x,d.y); addFx('text',d.x,d.y,{txt:'−5',color:'#ffd27a'});
+      log(`Frappe aérienne ${SIDE[act.side].name.toLowerCase()} sur ${TYPES[d.type].name.toLowerCase()} (${d.x},${d.y}) : −5`, 's'+act.side);
+      if (d.hp<=0) kill(d);
+      break;
+    }
+  }
+}
+let committing=false;
+async function commit(act){
+  if (!online.active){
+    applyAction(act);
+    if (act.t==='ready') { aiFlush(); }   // the AI camps finish their orders at once
+    render(); ui(); return;
+  }
+  if (committing) return;
+  committing=true; ui();
+  try{
+    let lease=null;
+    for (let i=0;i<10;i++){ lease = await online.ref.acquire({holder:online.me, ttlMs:4000}); if (lease.acquired) break; await sleep(200+Math.random()*300); }
+    if (!lease || !lease.acquired){ log('Le serveur est occupé, réessayez.','g'); return; }
+    const snap = await online.ref.get(); const d = snap.data();
+    if (d && typeof d.rev==='number' && d.rev > S.rev && d.state) adoptState(d.state, d.rev);
+    applyAction(act);
+    S.rev++;
+    await online.ref.update({ state:serialize(), rev:S.rev, status:S.over?'over':'playing', updatedAt:Date.now() });
+  }catch(e){ log('Synchronisation impossible ('+(e.code||'?')+').','g'); }
+  finally{ committing=false; render(); ui(); }
+}
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+// ---------- online (db + user capabilities) ----------
+const netEl = { status:$('netStatus'), actions:$('netActions'), lobby:$('lobby'), hint:$('netHint') };
+const serialize = () => ({ turn:S.turn, deaths:S.deaths||0, nuked:!!S.nuked, side:S.side, sides:S.sides, ready:S.ready, shop:S.shop, bonus:S.bonus, strike:S.strike, gold:S.gold, over:S.over, cities:S.cities, units:S.units, mapId:S.mapId, diffId:S.diffId||null, log:S.log.slice(0,40) });
+function adoptState(state, rev){
+  const selId = S && S.sel ? S.sel.id : null;
+  if (!S || S.mapId!==state.mapId) loadMap(state.mapId||'vallee'); else terrainReady=false;
+  S = { ...state, sides: state.sides || ['B','R'], ready: state.ready || {}, shop: state.shop || {day:dayKey(), bought:{}}, bonus: state.bonus || {}, strike: state.strike || {}, deaths: state.deaths||0, nuked: !!state.nuked, sel:null, reach:null, targets:null, busy:false, rev };
+  uid = Math.max(1, ...S.units.map(u=>u.id)) + 1;
+  if (selId){ const u=byId(selId); if (u) select(u); }
+}
+function adopt(state, rev){
+  adoptState(state, rev);
+  render(); ui();
+  if (S.over) endGame(S.over, S.over===my() ? 'Tous les adversaires sont vaincus.' : 'La partie est terminée.'); else if (my() && !alive(my())) endGame(null,'Votre quartier général est tombé.'); else $('overlay').hidden=true;
+}
+let writing=false, pending=false;
+async function sync(){ /* actions are committed through commit() */ }
+async function sync_legacy(){
+  return;
+  if (writing){ pending=true; return; }
+  writing=true;
+  S.rev = (S.rev||0)+1;
+  try{
+    await online.ref.update({ state:serialize(), rev:S.rev, status:S.over?'over':'playing', turnSide:S.side, updatedAt:Date.now() });
+  }catch(e){ S.rev--; log('Synchronisation impossible ('+(e.code||'?')+').','g'); $('log').innerHTML = S.log.map(l=>`<div class="${l.cls||''}">${l.msg}</div>`).join(''); }
+  writing=false;
+  if (pending){ pending=false; sync(); }
+}
+function leaveGame(){
+  if (online.unsub) online.unsub(); online.unsub=null;
+  online.active=false; online.side=null; online.gameId=null; online.ref=null; online.meta=null;
+  try{ localStorage.removeItem('fdf-game'); }catch(e){}
+  netUI(); setupUI();
+}
+function openGame(id){
+  if (online.unsub) online.unsub();
+  online.gameId=id; online.ref=online.db.doc('games/'+id); online.active=true; S.rev=-1; setupUI();
+  try{ localStorage.setItem('fdf-game', id); }catch(e){}
+  online.unsub = online.ref.onSnapshot(snap => {
+    if (!snap.exists){ log('La partie a été supprimée.','g'); leaveGame(); newGame(); return; }
+    const d = snap.data(); online.meta = d;
+    const seats = d.players || {B:d.blue, R:d.red};
+    online.side = Object.keys(seats).find(sd => seats[sd]===online.me) || null;
+    if (typeof d.rev==='number' && d.rev > (S.rev ?? -1) && d.state) adopt(d.state, d.rev); else netUI();
+  }, e => { log('Connexion perdue ('+e.code+').','g'); ui(); });
+}
+async function createGame(){
+  mapId=selMap.value; nPlayers=+selPlayers.value; online.active=true; newGame(); online.active=false;
+  const players = {}; for (const sd of S.sides) players[sd] = sd==='B' ? online.me : null;
+  try{
+    const ref = await online.db.collection('games').add({ players, seats:S.sides.length, status:'waiting', rev:0, turnSide:'B', state:serialize(), createdAt:Date.now(), updatedAt:Date.now() });
+    openGame(ref.id);
+  }catch(e){ netEl.hint.textContent = 'Création impossible : '+(e.code||e.message); }
+}
+async function joinGame(id){
+  const ref = online.db.doc('games/'+id);
+  try{
+    const lease = await ref.acquire({holder:online.me, ttlMs:5000});
+    if (!lease.acquired){ netEl.hint.textContent='Quelqu\'un rejoint déjà cette partie, réessayez.'; return; }
+    const snap = await ref.get(); const d = snap.data();
+    const players = d ? {...(d.players || {B:d.blue, R:d.red})} : null;
+    const free = players ? Object.keys(players).find(sd=>!players[sd]) : null;
+    if (!free){ netEl.hint.textContent='Cette partie est déjà complète.'; return; }
+    players[free] = online.me;
+    const full = Object.values(players).every(Boolean);
+    await ref.update({ players, status: full ? 'playing' : 'waiting', updatedAt:Date.now() });
+    openGame(id);
+  }catch(e){ netEl.hint.textContent='Impossible de rejoindre : '+(e.code||e.message); }
+}
+async function deleteGame(id){ try{ await online.db.doc('games/'+id).delete(); }catch(e){} }
+async function netUI(){
+  if (!online.db){ netEl.status.textContent='Solo contre l\'ordinateur'; netEl.actions.innerHTML=''; netEl.lobby.hidden=true; netEl.hint.textContent = online.user===undefined ? '' : 'Mode en ligne indisponible ici (ouvrez la page connecté, dans votre organisation).'; return; }
+  const seatsOf = g => g.players || {B:g.blue, R:g.red};
+  const names = await online.user.profiles([...new Set(online.games.flatMap(g=>Object.values(seatsOf(g))).concat(online.meta?Object.values(seatsOf(online.meta)):[]).filter(Boolean))]);
+  const nm = id => id===online.me ? 'vous' : (names[id]?.name || 'Un joueur');
+  if (online.active && online.meta){
+    const m=online.meta;
+    netEl.status.innerHTML = online.side
+      ? `En ligne — vous êtes les <span class="you" style="color:${SIDE[online.side].color}">${SIDE[online.side].name}</span>`
+      : 'En ligne — spectateur';
+    const st = seatsOf(m), missing = Object.values(st).filter(v=>!v).length;
+    netEl.hint.textContent = Object.keys(st).map(sd=>`${SIDE[sd].name} : ${st[sd]?nm(st[sd]):'—'}`).join(' · ') + (missing ? ` — en attente de ${missing} joueur${missing>1?'s':''} : partagez cette page, ils rejoignent depuis le salon.` : '');
+    netEl.actions.innerHTML = '<button id="btnLeave">Quitter la partie</button>';
+    $('btnLeave').onclick = ()=>{ leaveGame(); newGame(); };
+    netEl.lobby.hidden=true; return;
+  }
+  netEl.status.textContent='Solo contre l\'ordinateur';
+  netEl.actions.innerHTML = '<button id="btnCreate" class="primary">Créer une partie en ligne</button>';
+  $('btnCreate').onclick = createGame;
+  netEl.hint.textContent = 'Le salon liste les parties de votre organisation. Partagez la page avec votre adversaire.';
+  const mine = online.games.filter(g=>Object.values(seatsOf(g)).includes(online.me));
+  const open = online.games.filter(g=>g.status==='waiting' && !Object.values(seatsOf(g)).includes(online.me));
+  const row = (g,btn) => `<div class="game"><span class="who">${Object.values(seatsOf(g)).map(v=>`<b>${v?nm(v):'…'}</b>`).join(' vs ')} <span class="pill">${(MAPS[g.state?.mapId]||MAPS.vallee).name}</span> <span class="pill ${g.status==='waiting'?'wait':'play'}">${g.status==='waiting'?'attente':g.status==='over'?'finie':'tour '+(g.state?.turn||1)}</span></span>${btn}</div>`;
+  let html='';
+  if (open.length) html += '<h4>Parties ouvertes</h4>' + open.map(g=>row(g,`<button data-join="${g.id}">Rejoindre</button>`)).join('');
+  if (mine.length) html += '<h4>Vos parties</h4>' + mine.map(g=>row(g,`<button data-open="${g.id}">Reprendre</button>${seatsOf(g).B===online.me?`<button class="del" data-del="${g.id}" title="Supprimer">✕</button>`:''}`)).join('');
+  if (!html) html = '<p class="empty" style="margin:4px 0 0">Aucune partie en ligne pour l\'instant.</p>';
+  netEl.lobby.innerHTML = html; netEl.lobby.hidden=false;
+}
+netEl.lobby.addEventListener('click', ev=>{
+  const b=ev.target.closest('button'); if(!b) return;
+  if (b.dataset.join) joinGame(b.dataset.join);
+  else if (b.dataset.open) openGame(b.dataset.open);
+  else if (b.dataset.del) deleteGame(b.dataset.del);
+});
+async function initOnline(){
+  online.user = undefined; netUI();
+  const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+  online.user = user;
+  const me = user ? await user.id() : null;
+  if (!db || !me){ online.user=null; netUI(); return; }
+  online.db=db; online.me=me;
+  online.lobbyUnsub = db.collection('games').orderBy('updatedAt','desc').limit(30).onSnapshot(q => {
+    online.games = q.docs.map(d=>({id:d.id, ...d.data()}));
+    netUI();
+  }, e => { netEl.hint.textContent='Salon indisponible ('+e.code+').'; });
+  let last=null; try{ last=localStorage.getItem('fdf-game'); }catch(e){}
+  if (last) openGame(last); else netUI();
+}
+if (window.claude && typeof window.claude.use==='function') initOnline();
+else window.addEventListener('load', ()=>{ if (window.claude && typeof window.claude.use==='function') initOnline(); else { online.user=null; netUI(); } });
+
+// hot reload support
+window.claude?.hot?.snapshot?.(() => ({S, uid}));
+function start(data){
+  if (data && data.S && !online.active){ S=data.S; uid=data.uid||uid; mapId=S.mapId||'vallee'; diffId=S.diffId||diffId; S.sides=S.sides||['B','R']; S.ready=S.ready||{}; S.shop=S.shop||{day:dayKey(),bought:{}}; S.bonus=S.bonus||{}; S.strike=S.strike||{}; S.deaths=S.deaths||0; loadMap(mapId); if(S.busy){S.busy=false;} render(); ui(); if(S.over){ endGame(S.over,''); } }
+  else newGame();
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+
+// test hooks (used by the automated test page; harmless for players)
+window.__fdf = {
+  get S(){ return S; }, set S(v){ S=v; },
+  setup({map, players, diff, human}={}){ if(map) mapId=map; if(players) nPlayers=players; if(diff) diffId=diff; if(human!==undefined) humanSide=human; },
+  newGame, applyAction, commit, readyUp, advanceTurn, aiStep, aiFlush, reachable, targetsFrom, dmgCalc, recruit, doAttack, doMove, kill,
+  serialize, adoptState, unitAt, key, alive, my, myTurn, select, mk, shopOffers, dayKey, SHOP_POOL, SHOP_LIMIT, nuke, bounty, BOUNTY_BASE, BOUNTY_PER_DEATH, BOUNTY_MIN, setToday(d){ todayOverride=d; }, MAPS, TYPES, DIFF, SIDE, ORDER, TERRAIN, loadMap,
+  get W(){return W}, get H(){return H}, get MAP(){return MAP}, tile,
+};
+})();
+</script>
+
+</body>
+</html>
