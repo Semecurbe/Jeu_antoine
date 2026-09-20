@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Des chiffres et des lettres : le mot le plus long et le compte est bon, jouables dans le navigateur.">
+<meta name="theme-color" content="#1a1a2e">
+<title>Des chiffres et des lettres</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --bg2: #16213e;
+    --card: #1f2a48;
+    --card2: #26335a;
+    --text: #eaeaf2;
+    --muted: #a3a8c3;
+    --accent: #f0d9b5;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --orange: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, var(--bg2), var(--bg) 70%);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+  header { text-align: center; margin-bottom: 20px; width: 100%; max-width: 900px; position: relative; }
+  header a.back { position: absolute; left: 0; top: 6px; color: var(--muted); text-decoration: none; font-size: .95rem; }
+  header a.back:hover { color: var(--accent); }
+  h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); margin: 0 0 4px; }
+  header p { color: var(--muted); margin: 0; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tabs button {
+    padding: 10px 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
+    background: var(--card); color: var(--text); font-size: 1rem; cursor: pointer;
+  }
+  .tabs button.active { background: var(--accent); color: var(--bg); font-weight: 700; border-color: var(--accent); }
+
+  .panel { display: none; width: 100%; max-width: 900px; }
+  .panel.active { display: block; }
+  .card {
+    background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 16px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .row.between { justify-content: space-between; }
+  button.btn {
+    padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 1rem; font-weight: 600; background: var(--card2); color: var(--text);
+    transition: filter .1s;
+  }
+  button.btn:hover:not(:disabled) { filter: brightness(1.2); }
+  button.btn:disabled { opacity: .4; cursor: not-allowed; }
+  button.btn.primary { background: var(--accent); color: var(--bg); }
+  button.btn.blue { background: var(--blue); color: #fff; }
+  button.btn.green { background: var(--green); color: #fff; }
+  button.btn.red { background: var(--red); color: #fff; }
+
+  .timer {
+    font-variant-numeric: tabular-nums; font-size: 1.6rem; font-weight: 700;
+    min-width: 3ch; text-align: right;
+  }
+  .timer.warn { color: var(--orange); }
+  .timer.over { color: var(--red); }
+
+  .tiles { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px 0; min-height: 64px; }
+  .tile {
+    width: 56px; height: 64px; display: flex; align-items: center; justify-content: center;
+    background: var(--accent); color: var(--bg); font-size: 1.8rem; font-weight: 700;
+    border-radius: 10px; box-shadow: 0 4px 0 #b8a180; user-select: none;
+  }
+  .tile.empty { background: transparent; box-shadow: inset 0 0 0 2px rgba(255,255,255,.15); }
+  .tile.num { width: auto; min-width: 64px; padding: 0 12px; background: #dbeafe; box-shadow: 0 4px 0 #93b4e0; cursor: pointer; }
+  .tile.num.selected { background: var(--blue); color: #fff; box-shadow: 0 4px 0 #1d4ed8; }
+  .tile.num.used { opacity: .25; cursor: default; }
+  .tile.num.derived { background: #bbf7d0; box-shadow: 0 4px 0 #6cc590; }
+
+  .target {
+    font-size: 3rem; font-weight: 800; color: var(--accent); text-align: center;
+    letter-spacing: .05em; margin: 8px 0;
+  }
+  .ops { display: flex; gap: 8px; justify-content: center; margin: 8px 0 16px; }
+  .ops button { width: 56px; height: 56px; font-size: 1.6rem; border-radius: 10px; }
+  .ops button.selected { background: var(--blue); color: #fff; }
+
+  input[type=text] {
+    flex: 1; min-width: 180px; padding: 12px 14px; font-size: 1.3rem; text-transform: uppercase;
+    letter-spacing: .1em; border-radius: 10px; border: 1px solid rgba(255,255,255,.15);
+    background: var(--bg); color: var(--text);
+  }
+  input[type=text]:focus { outline: 2px solid var(--accent); }
+
+  .msg { margin-top: 12px; min-height: 1.4em; font-weight: 600; }
+  .msg.ok { color: var(--green); }
+  .msg.ko { color: var(--red); }
+  .msg.info { color: var(--muted); font-weight: 400; }
+
+  .steps { list-style: none; padding: 0; margin: 8px 0 0; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+  .steps li { padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+  .words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .words span { background: var(--card2); padding: 6px 10px; border-radius: 8px; font-family: monospace; font-size: 1.05rem; }
+  .words span.mine { background: var(--green); color: #fff; }
+
+  .score { color: var(--muted); }
+  .score b { color: var(--accent); font-size: 1.2rem; }
+  h2 { margin: 0 0 12px; font-size: 1.2rem; }
+  details { color: var(--muted); font-size: .95rem; }
+  details summary { cursor: pointer; color: var(--text); }
+  details ul { margin: 8px 0 0; padding-left: 20px; }
+  label.opt { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: .95rem; }
+  label.opt input { width: 60px; padding: 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,.15); background: var(--bg); color: var(--text); }
+  #loading { color: var(--muted); font-style: italic; }
+  .bots { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; width: 100%; max-width: 900px; }
+  .bots button {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px;
+    padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12);
+    background: var(--card); color: var(--text); cursor: pointer; font-size: .95rem;
+  }
+  .bots button small { color: var(--muted); font-size: .75rem; }
+  .bots button.active { border-color: var(--accent); background: var(--card2); box-shadow: 0 0 0 2px var(--accent); }
+  .bots button .emoji { font-size: 1.5rem; }
+  .duel { display: flex; gap: 16px; align-items: center; }
+  .duel b { color: var(--accent); font-size: 1.2rem; }
+  .botmsg { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,.05); border-left: 3px solid var(--blue); }
+  .botmsg .emoji { margin-right: 6px; }
+  .tabs button.gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border-color: transparent; font-weight: 700; }
+  body.match .tabs, body.match .bots, body.match #btnNouveauL, body.match #btnTirageC, body.match .duel { display: none; }
+  #matchBar { border-color: var(--orange); }
+  .scoreboard { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; }
+  .scoreboard b { font-size: 2rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .scoreboard .sep { color: var(--muted); }
+  .manche { color: var(--muted); }
+  .manche b { color: var(--orange); }
+  .progress { display: flex; gap: 4px; margin-top: 10px; }
+  .progress span { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); }
+  .progress span.L { background: rgba(59,130,246,.35); }
+  .progress span.C { background: rgba(34,197,94,.35); }
+  .progress span.done.L { background: var(--blue); }
+  .progress span.done.C { background: var(--green); }
+  .progress span.cur { outline: 2px solid var(--orange); }
+  #matchFin { text-align: center; padding: 12px 0 4px; }
+  #matchFin h2 { font-size: 1.8rem; margin: 0 0 8px; }
+  #matchFin table { margin: 12px auto; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  #matchFin td, #matchFin th { padding: 4px 12px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: center; }
+  #matchFin th { color: var(--muted); font-weight: 500; }
+  #matchFin td.win { color: var(--green); font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="../index.html">← Accueil</a>
+  <h1>Des chiffres et des lettres</h1>
+  <p>Le mot le plus long · Le compte est bon</p>
+</header>
+
+<div class="tabs">
+  <button id="tabLettres" class="active">🔤 Le mot le plus long</button>
+  <button id="tabChiffres">🔢 Le compte est bon</button>
+  <button id="btnMatch" class="gold">🏆 Match complet</button>
+</div>
+
+<div class="bots" id="bots"></div>
+
+<section class="panel active" id="matchBar" style="display:none">
+  <div class="card" style="margin-bottom:16px">
+    <div class="row between">
+      <div class="manche"><b id="matchManche"></b> <span id="matchEpreuve"></span></div>
+      <div class="scoreboard"><span>Vous</span><b id="matchJ">0</b><span class="sep">–</span><b id="matchB">0</b><span id="matchBotNom"></span></div>
+      <div class="row">
+        <button class="btn green" id="btnSuivante" style="display:none">Manche suivante →</button>
+        <button class="btn" id="btnAbandon">Arrêter le match</button>
+      </div>
+    </div>
+    <div class="progress" id="matchProgress"></div>
+    <div id="matchFin" style="display:none"></div>
+  </div>
+</section>
+
+<!-- ===================== LETTRES ===================== -->
+<section id="panelLettres" class="panel active">
+  <div class="card">
+    <div class="row between">
+      <div class="row">
+        <button class="btn blue" id="btnVoyelle">Voyelle</button>
+        <button class="btn blue" id="btnConsonne">Consonne</button>
+        <button class="btn" id="btnTirageAuto">Tirage auto</button>
+        <button class="btn red" id="btnNouveauL">Nouveau tirage</button>
+      </div>
+      <div class="row">
+        <label class="opt">⏱ <input type="number" id="dureeL" value="30" min="5" max="300"> s</label>
+        <div class="timer" id="timerL">30</div>
+      </div>
+    </div>
+    <div class="tiles" id="tilesL"></div>
+    <div class="row">
+      <input type="text" id="inputMot" placeholder="Votre mot…" autocomplete="off" spellcheck="false" disabled>
+      <button class="btn green" id="btnValiderMot" disabled>Valider</button>
+    </div>
+    <div class="msg info" id="msgL">Choisissez 10 lettres (voyelle / consonne), ou cliquez sur « Tirage auto ».</div>
+  </div>
+
+  <div class="card" id="cardSolL" style="display:none">
+    <div class="botmsg" id="botL" style="display:none"></div>
+    <h2 style="margin-top:12px">Les meilleurs mots</h2>
+    <div id="solL" class="words"></div>
+  </div>
+
+  <div class="card row between">
+    <div class="duel score"><span>Vous : <b id="scoreL">0</b></span><span id="duelL"></span></div>
+    <details>
+      <summary>Règles</summary>
+      <ul>
+        <li>Tirez 10 lettres en choisissant voyelle ou consonne à chaque fois.</li>
+        <li>Trouvez le mot le plus long possible avec ces lettres (chaque lettre au plus une fois).</li>
+        <li>Le mot rapporte autant de points que sa longueur. Accents ignorés.</li>
+        <li>À la fin du temps, le tirage est verrouillé et les meilleurs mots sont affichés.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- ===================== CHIFFRES ===================== -->
+<section id="panelChiffres" class="panel">
+  <div class="card">
+    <div class="row between">
+      <div class="row">
+        <button class="btn blue" id="btnTirageC">Nouveau tirage</button>
+        <button class="btn" id="btnAnnuler" disabled>↶ Annuler</button>
+        <button class="btn" id="btnReset" disabled>Recommencer</button>
+        <button class="btn green" id="btnValiderC" disabled>Valider</button>
+      </div>
+      <div class="row">
+        <label class="opt">⏱ <input type="number" id="dureeC" value="45" min="5" max="600"> s</label>
+        <div class="timer" id="timerC">45</div>
+      </div>
+    </div>
+    <div class="target" id="target">???</div>
+    <div class="tiles" id="tilesC"></div>
+    <div class="ops">
+      <button class="btn op" data-op="+">+</button>
+      <button class="btn op" data-op="-">−</button>
+      <button class="btn op" data-op="*">×</button>
+      <button class="btn op" data-op="/">÷</button>
+    </div>
+    <ul class="steps" id="stepsC"></ul>
+    <div class="msg info" id="msgC">Cliquez sur « Nouveau tirage » pour commencer.</div>
+  </div>
+
+  <div class="card" id="cardSolC" style="display:none">
+    <div class="botmsg" id="botC" style="display:none"></div>
+    <h2 id="solCTitle" style="margin-top:12px">Solution</h2>
+    <ul class="steps" id="solC"></ul>
+  </div>
+
+  <div class="card row between">
+    <div class="duel score"><span>Vous : <b id="scoreC">0</b></span><span id="duelC"></span></div>
+    <details>
+      <summary>Règles</summary>
+      <ul>
+        <li>6 plaques tirées parmi 1 à 10, 25, 50, 75 et 100 ; un nombre cible entre 100 et 999.</li>
+        <li>Combinez les plaques avec + − × ÷ pour atteindre la cible. Chaque plaque (ou résultat) sert au plus une fois.</li>
+        <li>Seuls les résultats entiers positifs sont autorisés.</li>
+        <li>Compte exact : 10 pts. Aussi proche que le meilleur possible : 7 pts. Sinon : 0.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<p id="loading">Chargement du dictionnaire…</p>
+<script src="mots.js"></script>
+<script>
+// ------------------------------------------------------------------
+// Utilitaires
+// ------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+function weightedPick(table) {
+  const total = table.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [l, w] of table) { r -= w; if (r < 0) return l; }
+  return table[table.length - 1][0];
+}
+function makeTimer(el, onEnd) {
+  let left = 0, id = null;
+  const draw = () => {
+    el.textContent = left;
+    el.classList.toggle('warn', left <= 10 && left > 0);
+    el.classList.toggle('over', left <= 0);
+  };
+  return {
+    start(secs) {
+      this.stop(); left = secs; draw();
+      id = setInterval(() => { left--; draw(); if (left <= 0) { this.stop(); onEnd(); } }, 1000);
+    },
+    stop() { if (id) clearInterval(id); id = null; },
+    set(secs) { this.stop(); left = secs; draw(); },
+    get running() { return id !== null; }
+  };
+}
+
+// Onglets
+$('tabLettres').onclick = () => switchTab('Lettres');
+$('tabChiffres').onclick = () => switchTab('Chiffres');
+function switchTab(name) {
+  for (const t of ['Lettres', 'Chiffres']) {
+    $('tab' + t).classList.toggle('active', t === name);
+    $('panel' + t).classList.toggle('active', t === name);
+  }
+}
+
+// ------------------------------------------------------------------
+// Dictionnaire
+// ------------------------------------------------------------------
+const DICT = new Set();        // tous les mots
+const BY_LEN = {};             // longueur -> tableau de mots
+(function loadDict() {
+  const src = window.MOTS_FR || {};
+  for (const L of Object.keys(src)) {
+    const arr = src[L].split(' ');
+    BY_LEN[L] = arr;
+    for (const w of arr) DICT.add(w);
+  }
+  $('loading').remove();
+})();
+
+// ------------------------------------------------------------------
+// ADVERSAIRES (bots)
+// ------------------------------------------------------------------
+// lettres : écart typique par rapport au meilleur mot (tiré au hasard dans `ecart`)
+// chiffres : budget de nœuds explorés par le solveur (Infinity = solution optimale)
+const BOTS = [
+  { id: 'aucun',   nom: 'Solo',   emoji: '🚫', desc: 'sans adversaire' },
+  { id: 'leo',     nom: 'Léo',    emoji: '🐣', desc: 'débutant',  ecart: [2, 3, 4], budget: 30,
+    phrases: ['Euh… j\'ai trouvé ça.', 'Pas facile !', 'Je débute, hein.'] },
+  { id: 'manon',   nom: 'Manon',  emoji: '🎓', desc: 'moyenne',   ecart: [1, 1, 2, 3], budget: 300,
+    phrases: ['Pas mal, non ?', 'J\'ai fait ce que j\'ai pu.', 'Mieux la prochaine fois !'] },
+  { id: 'remi',    nom: 'Rémi',   emoji: '🧠', desc: 'expert',    ecart: [0, 0, 1, 1, 2], budget: 3000,
+    phrases: ['Voilà.', 'Élémentaire.', 'Battez ça !'] },
+  { id: 'ada',     nom: 'Ada',    emoji: '🤖', desc: 'championne', ecart: [0], budget: Infinity,
+    phrases: ['Calcul terminé.', 'Optimal.', 'Résistance inutile.'] },
+];
+let bot = BOTS[0];
+let scoreBotL = 0, scoreBotC = 0;
+
+(function renderBots() {
+  const c = $('bots');
+  for (const b of BOTS) {
+    const btn = document.createElement('button');
+    btn.innerHTML = `<span class="emoji">${b.emoji}</span>${b.nom}<small>${b.desc}</small>`;
+    btn.classList.toggle('active', b === bot);
+    btn.onclick = () => {
+      bot = b;
+      scoreBotL = scoreBotC = 0;
+      [...c.children].forEach((x, i) => x.classList.toggle('active', BOTS[i] === b));
+      majDuel();
+    };
+    c.appendChild(btn);
+  }
+  majDuel();
+})();
+function majDuel() {
+  const actif = bot.id !== 'aucun';
+  $('duelL').innerHTML = actif ? `${bot.emoji} ${bot.nom} : <b>${scoreBotL}</b>` : '';
+  $('duelC').innerHTML = actif ? `${bot.emoji} ${bot.nom} : <b>${scoreBotC}</b>` : '';
+}
+function phraseBot() { return bot.phrases[rnd(bot.phrases.length)]; }
+
+// Le bot cherche un mot d'une longueur = meilleure longueur − écart (au hasard)
+function motDuBot(arr, bestLen) {
+  const dispo = compteLettres(arr);
+  const ecart = bot.ecart[rnd(bot.ecart.length)];
+  for (let L = Math.max(2, bestLen - ecart); L >= 2; L--) {
+    const found = (BY_LEN[L] || []).filter(w => formable(w, dispo));
+    if (found.length) return found[rnd(found.length)];
+  }
+  return null;
+}
+
+// ------------------------------------------------------------------
+// LE MOT LE PLUS LONG
+// ------------------------------------------------------------------
+const VOYELLES = [['A', 9], ['E', 15], ['I', 8], ['O', 6], ['U', 6], ['Y', 1]];
+const CONSONNES = [['B', 2], ['C', 2], ['D', 3], ['F', 2], ['G', 2], ['H', 2], ['J', 1], ['K', 1], ['L', 5], ['M', 3],
+  ['N', 6], ['P', 2], ['Q', 1], ['R', 6], ['S', 6], ['T', 6], ['V', 2], ['W', 1], ['X', 1], ['Z', 1]];
+const NB_LETTRES = 10;
+
+let lettres = [];
+let lettresLocked = false;
+let scoreL = 0;
+const timerL = makeTimer($('timerL'), () => finLettres(null));
+
+function renderLettres() {
+  const c = $('tilesL'); c.innerHTML = '';
+  for (let i = 0; i < NB_LETTRES; i++) {
+    const d = document.createElement('div');
+    d.className = 'tile' + (i < lettres.length ? '' : ' empty');
+    d.textContent = lettres[i] || '';
+    c.appendChild(d);
+  }
+  const complet = lettres.length === NB_LETTRES;
+  $('btnVoyelle').disabled = complet;
+  $('btnConsonne').disabled = complet;
+  $('btnTirageAuto').disabled = complet;
+  $('inputMot').disabled = !complet || lettresLocked;
+  $('btnValiderMot').disabled = !complet || lettresLocked;
+}
+
+function ajouterLettre(table) {
+  if (lettres.length >= NB_LETTRES) return;
+  lettres.push(weightedPick(table));
+  renderLettres();
+  if (lettres.length === NB_LETTRES) demarrerLettres();
+}
+
+function nouveauTirageL() {
+  timerL.stop();
+  lettres = []; lettresLocked = false;
+  $('inputMot').value = '';
+  $('cardSolL').style.display = 'none';
+  setMsg('msgL', 'Choisissez 10 lettres (voyelle / consonne), ou cliquez sur « Tirage auto ».', 'info');
+  timerL.set(+$('dureeL').value || 30);
+  renderLettres();
+}
+
+function demarrerLettres() {
+  setMsg('msgL', 'À vous de jouer !', 'info');
+  timerL.start(+$('dureeL').value || 30);
+  $('inputMot').focus();
+}
+
+function compteLettres(arr) {
+  const c = {};
+  for (const l of arr) c[l] = (c[l] || 0) + 1;
+  return c;
+}
+function formable(mot, dispo) {
+  const c = {};
+  for (const l of mot) {
+    c[l] = (c[l] || 0) + 1;
+    if (c[l] > (dispo[l] || 0)) return false;
+  }
+  return true;
+}
+function meilleursMots(arr) {
+  const dispo = compteLettres(arr);
+  for (let L = NB_LETTRES - 1; L >= 2; L--) {
+    const found = (BY_LEN[L] || []).filter(w => formable(w, dispo));
+    if (found.length) return found;
+  }
+  return [];
+}
+
+function validerMot() {
+  if (lettresLocked) return;
+  const mot = $('inputMot').value.trim().toUpperCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (!mot) return;
+  finLettres(mot);
+}
+
+// mot === null : temps écoulé sans proposition
+function finLettres(mot) {
+  timerL.stop();
+  lettresLocked = true;
+  renderLettres();
+  const dispo = compteLettres(lettres);
+  let pts = 0, ok = false;
+  if (mot === null) {
+    setMsg('msgL', '⏱ Temps écoulé !', 'ko');
+  } else if (!/^[A-Z]+$/.test(mot)) {
+    setMsg('msgL', 'Mot invalide (lettres uniquement).', 'ko');
+  } else if (!formable(mot, dispo)) {
+    setMsg('msgL', `« ${mot} » n'utilise pas seulement les lettres du tirage.`, 'ko');
+  } else if (!DICT.has(mot)) {
+    setMsg('msgL', `« ${mot} » n'est pas dans le dictionnaire.`, 'ko');
+  } else {
+    ok = true; pts = mot.length;
+    if (!match) { scoreL += pts; $('scoreL').textContent = scoreL; }
+  }
+  const best = meilleursMots(lettres);
+  const bestLen = best.length ? best[0].length : 0;
+  if (ok) {
+    const bravo = mot.length === bestLen ? ' 🏆 Le mot le plus long !' : ` (meilleur possible : ${bestLen} lettres)`;
+    setMsg('msgL', `✔ « ${mot} » : ${pts} points.${bravo}`, 'ok');
+  }
+  const bl = $('botL');
+  if (bot.id !== 'aucun') {
+    const mb = motDuBot(lettres, bestLen);
+    const pb = mb ? mb.length : 0;
+    bl.style.display = '';
+    bl.innerHTML = `<span class="emoji">${bot.emoji}</span><b>${bot.nom}</b> propose « ${mb || '—'} » : ${pb} pts. <i>${phraseBot()}</i>`
+      + (ok && pts > pb ? ' 🎉 Vous gagnez la manche !' : ok && pts === pb ? ' 🤝 Égalité.' : ' 😅 Le bot gagne la manche.');
+    if (match) {
+      // règle du match : seul le mot le plus long marque (les deux en cas d'égalité)
+      const pj = pts >= pb ? pts : 0, pbm = pb >= pts ? pb : 0;
+      pointsManche(pj, pbm, `« ${mot || '—'} »`, `« ${mb || '—'} »`);
+    } else { scoreBotL += pb; majDuel(); }
+  } else bl.style.display = 'none';
+  const sol = $('solL'); sol.innerHTML = '';
+  if (!best.length) sol.textContent = 'Aucun mot trouvé.';
+  for (const w of best.slice(0, 40)) {
+    const s = document.createElement('span');
+    s.textContent = w;
+    if (w === mot) s.classList.add('mine');
+    sol.appendChild(s);
+  }
+  if (best.length > 40) { const s = document.createElement('span'); s.textContent = `… +${best.length - 40}`; sol.appendChild(s); }
+  $('cardSolL').style.display = '';
+}
+
+$('btnVoyelle').onclick = () => ajouterLettre(VOYELLES);
+$('btnConsonne').onclick = () => ajouterLettre(CONSONNES);
+$('btnTirageAuto').onclick = () => {
+  // tirage équilibré : entre 3 et 5 voyelles
+  const nbV = 3 + rnd(3);
+  while (lettres.length < NB_LETTRES) {
+    const restant = NB_LETTRES - lettres.length;
+    const voyellesActuelles = lettres.filter(l => 'AEIOUY'.includes(l)).length;
+    const manqueV = nbV - voyellesActuelles;
+    const table = manqueV > 0 && (manqueV >= restant || Math.random() < manqueV / restant) ? VOYELLES : CONSONNES;
+    lettres.push(weightedPick(table));
+  }
+  renderLettres();
+  demarrerLettres();
+};
+$('btnNouveauL').onclick = nouveauTirageL;
+$('btnValiderMot').onclick = validerMot;
+$('inputMot').addEventListener('keydown', e => { if (e.key === 'Enter') validerMot(); });
+
+// ------------------------------------------------------------------
+// LE COMPTE EST BON
+// ------------------------------------------------------------------
+const PLAQUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 25, 50, 75, 100];
+let cible = 0;
+let plaques = [];        // {v, used, derived}
+let historique = [];     // snapshots pour annuler
+let etapes = [];         // textes des opérations
+let selA = null, selOp = null;
+let chiffresLocked = true;
+let scoreC = 0;
+let solutionC = null;
+const timerC = makeTimer($('timerC'), () => finChiffres());
+
+function nouveauTirageC() {
+  timerC.stop();
+  const pool = PLAQUES.slice();
+  plaques = [];
+  for (let i = 0; i < 6; i++) plaques.push({ v: pool.splice(rnd(pool.length), 1)[0], used: false, derived: false });
+  cible = 100 + rnd(900);
+  historique = []; etapes = []; selA = null; selOp = null;
+  chiffresLocked = false;
+  $('target').textContent = cible;
+  $('cardSolC').style.display = 'none';
+  $('btnValiderC').disabled = false;
+  setMsg('msgC', 'Cliquez sur un nombre, un opérateur, puis un autre nombre.', 'info');
+  // Solveur lancé tout de suite (rapide) pour connaître le meilleur résultat
+  solutionC = resoudre(plaques.map(p => p.v), cible);
+  renderChiffres();
+  timerC.start(+$('dureeC').value || 45);
+}
+
+function renderChiffres() {
+  const c = $('tilesC'); c.innerHTML = '';
+  plaques.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'tile num' + (p.used ? ' used' : '') + (p.derived ? ' derived' : '') + (selA === i ? ' selected' : '');
+    d.textContent = p.v;
+    if (!p.used && !chiffresLocked) d.onclick = () => clicNombre(i);
+    c.appendChild(d);
+  });
+  document.querySelectorAll('.ops .op').forEach(b => {
+    b.classList.toggle('selected', b.dataset.op === selOp);
+    b.disabled = chiffresLocked || selA === null;
+  });
+  const s = $('stepsC'); s.innerHTML = '';
+  for (const e of etapes) { const li = document.createElement('li'); li.textContent = e; s.appendChild(li); }
+  $('btnAnnuler').disabled = chiffresLocked || !historique.length;
+  $('btnReset').disabled = chiffresLocked || !historique.length;
+}
+
+function clicNombre(i) {
+  if (chiffresLocked) return;
+  if (selA === null || selOp === null) { selA = i; renderChiffres(); return; }
+  if (i === selA) { selA = null; selOp = null; renderChiffres(); return; }
+  const a = plaques[selA].v, b = plaques[i].v;
+  const r = calc(a, selOp, b);
+  if (r === null) {
+    setMsg('msgC', 'Opération impossible (résultat non entier ou négatif).', 'ko');
+    selA = null; selOp = null; renderChiffres(); return;
+  }
+  historique.push({ plaques: plaques.map(p => ({ ...p })), etapes: etapes.slice() });
+  plaques[selA].used = true; plaques[i].used = true;
+  plaques.push({ v: r, used: false, derived: true });
+  etapes.push(`${a} ${symb(selOp)} ${b} = ${r}`);
+  selA = null; selOp = null;
+  setMsg('msgC', r === cible ? '🎯 Le compte est bon ! Validez.' : '', 'info');
+  renderChiffres();
+  if (r === cible) finChiffres();
+}
+function symb(op) { return { '+': '+', '-': '−', '*': '×', '/': '÷' }[op]; }
+function calc(a, op, b) {
+  switch (op) {
+    case '+': return a + b;
+    case '-': return a - b > 0 ? a - b : null;
+    case '*': return a * b;
+    case '/': return b !== 0 && a % b === 0 ? a / b : null;
+  }
+  return null;
+}
+
+document.querySelectorAll('.ops .op').forEach(b => b.onclick = () => {
+  if (chiffresLocked || selA === null) return;
+  selOp = selOp === b.dataset.op ? null : b.dataset.op;
+  renderChiffres();
+});
+$('btnAnnuler').onclick = () => {
+  const h = historique.pop(); if (!h) return;
+  plaques = h.plaques; etapes = h.etapes; selA = null; selOp = null;
+  renderChiffres();
+};
+$('btnReset').onclick = () => {
+  if (!historique.length) return;
+  const h = historique[0];
+  plaques = h.plaques; etapes = h.etapes; historique = []; selA = null; selOp = null;
+  renderChiffres();
+};
+$('btnTirageC').onclick = nouveauTirageC;
+$('btnValiderC').onclick = () => finChiffres();
+
+function meilleurJoueur() {
+  // meilleur nombre atteint par le joueur : parmi les plaques disponibles (initiales ou dérivées)
+  let best = null;
+  for (const p of plaques) if (!p.used && (best === null || Math.abs(p.v - cible) < Math.abs(best - cible))) best = p.v;
+  return best;
+}
+
+function finChiffres() {
+  if (chiffresLocked) return;
+  timerC.stop();
+  chiffresLocked = true; selA = null; selOp = null;
+  $('btnValiderC').disabled = true;
+  renderChiffres();
+  const mine = meilleurJoueur();
+  const dMine = Math.abs(mine - cible);
+  const dBest = Math.abs(solutionC.valeur - cible);
+  let pts = 0;
+  if (dMine === 0) { pts = 10; setMsg('msgC', `🎯 Le compte est bon ! +10 points`, 'ok'); }
+  else if (dMine === dBest) { pts = 7; setMsg('msgC', `Vous avez atteint ${mine} : c'est le plus proche possible (${dMine} d'écart). +7 points`, 'ok'); }
+  else setMsg('msgC', `Vous avez atteint ${mine} (${dMine} d'écart). Le meilleur possible était ${solutionC.valeur} (${dBest} d'écart).`, 'ko');
+  if (!match) { scoreC += pts; $('scoreC').textContent = scoreC; }
+
+  const bc = $('botC');
+  if (bot.id !== 'aucun') {
+    const sb = bot.budget === Infinity ? solutionC : resoudre(plaques.filter(p => !p.derived).map(p => p.v), cible, bot.budget);
+    const dBot = Math.abs(sb.valeur - cible);
+    const pb = dBot === 0 ? 10 : dBot === dBest ? 7 : 0;
+    if (match) {
+      // règle du match : compte exact = 10 pour chacun ; sinon le plus proche marque 7 (les deux si égalité)
+      let pj, pbm;
+      if (dMine === 0 || dBot === 0) { pj = dMine === 0 ? 10 : 0; pbm = dBot === 0 ? 10 : 0; }
+      else { pj = dMine <= dBot ? 7 : 0; pbm = dBot <= dMine ? 7 : 0; }
+      pointsManche(pj, pbm, `${mine} (${dMine})`, `${sb.valeur} (${dBot})`);
+    } else { scoreBotC += pb; majDuel(); }
+    bc.style.display = '';
+    bc.innerHTML = `<span class="emoji">${bot.emoji}</span><b>${bot.nom}</b> atteint ${sb.valeur} (${dBot} d'écart) : ${pb} pts. <i>${phraseBot()}</i>`
+      + (dMine < dBot ? ' 🎉 Vous gagnez la manche !' : dMine === dBot ? ' 🤝 Égalité.' : ' 😅 Le bot gagne la manche.')
+      + (sb.etapes.length ? '<ul class="steps">' + sb.etapes.map(e => `<li>${e}</li>`).join('') + '</ul>' : '');
+  } else bc.style.display = 'none';
+
+  $('solCTitle').textContent = dBest === 0 ? 'Une solution exacte' : `Le plus proche possible : ${solutionC.valeur}`;
+  const s = $('solC'); s.innerHTML = '';
+  for (const e of solutionC.etapes) { const li = document.createElement('li'); li.textContent = e; s.appendChild(li); }
+  if (!solutionC.etapes.length) { const li = document.createElement('li'); li.textContent = `${solutionC.valeur} est déjà une plaque.`; s.appendChild(li); }
+  $('cardSolC').style.display = '';
+}
+
+// Solveur : recherche exhaustive sur les paires de nombres
+// budget : nombre max de nœuds explorés (les bots faibles s'arrêtent tôt, dans un ordre aléatoire)
+function resoudre(nums, target, budget = Infinity) {
+  let best = { valeur: nums[0], etapes: [] };
+  for (const n of nums) if (Math.abs(n - target) < Math.abs(best.valeur - target)) best = { valeur: n, etapes: [] };
+  const vus = new Set();
+  let noeuds = 0;
+  const limite = budget !== Infinity;
+  function rec(arr, etapes) {
+    if (Math.abs(best.valeur - target) === 0 || noeuds >= budget) return;
+    const key = arr.slice().sort((a, b) => a - b).join(',');
+    if (vus.has(key)) return; vus.add(key);
+    noeuds++;
+    const idx = [...arr.keys()];
+    if (limite) idx.sort(() => Math.random() - .5);
+    for (const i of idx) for (const j of idx) {
+      if (i === j) continue;
+      const a = arr[i], b = arr[j];
+      if (i > j && a === b) continue;
+      const cands = [];
+      if (i < j) { cands.push(['+', a + b]); cands.push(['*', a * b]); }
+      if (a > b) cands.push(['-', a - b]);
+      if (b > 1 && a % b === 0) cands.push(['/', a / b]);
+      for (const [op, r] of cands) {
+        if (r <= 0 || (op === '*' && (a === 1 || b === 1))) continue;
+        const reste = arr.filter((_, k) => k !== i && k !== j); reste.push(r);
+        const et = etapes.concat(`${a} ${symb(op)} ${b} = ${r}`);
+        if (Math.abs(r - target) < Math.abs(best.valeur - target) ||
+            (Math.abs(r - target) === Math.abs(best.valeur - target) && et.length < best.etapes.length)) {
+          best = { valeur: r, etapes: et };
+        }
+        if (best.valeur === target) return;
+        if (reste.length > 1) rec(reste, et);
+      }
+    }
+  }
+  rec(nums, []);
+  return best;
+}
+
+// ------------------------------------------------------------------
+// MATCH COMPLET : enchaînement de manches contre le bot, comme à la télé
+// ------------------------------------------------------------------
+const SEQUENCE = ['L', 'L', 'C', 'L', 'L', 'C', 'L', 'L', 'C', 'C'];
+const NOM_EPREUVE = { L: 'Le mot le plus long', C: 'Le compte est bon' };
+let match = null;
+
+function lancerMatch() {
+  if (bot.id === 'aucun') {
+    bot = BOTS[2];
+    [...$('bots').children].forEach((x, i) => x.classList.toggle('active', BOTS[i] === bot));
+  }
+  match = { manche: 0, j: 0, b: 0, log: [] };
+  document.body.classList.add('match');
+  $('matchBar').style.display = '';
+  $('matchFin').style.display = 'none';
+  $('matchBotNom').textContent = `${bot.emoji} ${bot.nom}`;
+  $('btnAbandon').textContent = 'Arrêter le match';
+  majMatch();
+  mancheSuivante();
+}
+
+function majMatch() {
+  $('matchJ').textContent = match.j;
+  $('matchB').textContent = match.b;
+  const p = $('matchProgress'); p.innerHTML = '';
+  SEQUENCE.forEach((t, i) => {
+    const sp = document.createElement('span');
+    sp.className = t + (i < match.manche - 1 ? ' done' : '') + (i === match.manche - 1 && !match.fini ? ' cur' : '');
+    if (match.fini) sp.classList.add('done');
+    p.appendChild(sp);
+  });
+}
+
+function mancheSuivante() {
+  if (!match) return;
+  if (match.manche >= SEQUENCE.length) return finMatch();
+  const t = SEQUENCE[match.manche++];
+  $('btnSuivante').style.display = 'none';
+  $('matchManche').textContent = `Manche ${match.manche}/${SEQUENCE.length}`;
+  $('matchEpreuve').textContent = '· ' + NOM_EPREUVE[t];
+  majMatch();
+  if (t === 'L') {
+    switchTab('Lettres');
+    nouveauTirageL();
+    setMsg('msgL', `Manche ${match.manche} : composez votre tirage (voyelle / consonne).`, 'info');
+  } else {
+    switchTab('Chiffres');
+    nouveauTirageC();
+  }
+  $('matchBar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function pointsManche(pj, pb, repJ, repB) {
+  if (!match) return;
+  match.j += pj; match.b += pb;
+  match.log.push({ n: match.manche, t: SEQUENCE[match.manche - 1], repJ, repB, pj, pb });
+  majMatch();
+  const b = $('btnSuivante');
+  b.textContent = match.manche >= SEQUENCE.length ? '🏁 Résultat final' : 'Manche suivante →';
+  b.style.display = '';
+}
+
+function finMatch() {
+  match.fini = true;
+  majMatch();
+  const f = $('matchFin');
+  const titre = match.j > match.b ? '🎉 Vous remportez le match !' : match.j < match.b ? `😅 ${bot.nom} remporte le match.` : '🤝 Match nul !';
+  const lignes = match.log.map(l =>
+    `<tr><td>${l.n}</td><td>${l.t === 'L' ? '🔤' : '🔢'}</td><td class="${l.pj > l.pb ? 'win' : ''}">${l.repJ}<br>+${l.pj}</td><td class="${l.pb > l.pj ? 'win' : ''}">${l.repB}<br>+${l.pb}</td></tr>`).join('');
+  f.innerHTML = `<h2>${titre}</h2><div class="scoreboard" style="justify-content:center">Vous <b>${match.j}</b><span class="sep">–</span><b>${match.b}</b> ${bot.emoji} ${bot.nom}</div>
+    <table><tr><th>#</th><th></th><th>Vous</th><th>${bot.nom}</th></tr>${lignes}</table>
+    <div class="row" style="justify-content:center;margin-top:8px"><button class="btn primary" id="btnRematch">🔁 Nouveau match</button></div>`;
+  f.style.display = '';
+  $('btnSuivante').style.display = 'none';
+  $('matchManche').textContent = 'Match terminé';
+  $('matchEpreuve').textContent = '';
+  $('btnAbandon').textContent = 'Quitter';
+  $('btnRematch').onclick = lancerMatch;
+  f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function quitterMatch() {
+  match = null;
+  timerL.stop(); timerC.stop();
+  document.body.classList.remove('match');
+  $('matchBar').style.display = 'none';
+  nouveauTirageL();
+  switchTab('Lettres');
+}
+
+$('btnMatch').onclick = lancerMatch;
+$('btnSuivante').onclick = mancheSuivante;
+$('btnAbandon').onclick = quitterMatch;
+
+// Init
+renderLettres();
+timerL.set(+$('dureeL').value || 30);
+timerC.set(+$('dureeC').value || 45);
+function setMsg(id, text, cls) { const m = $(id); m.textContent = text; m.className = 'msg ' + cls; }
+</script>
+</body>
+</html>
